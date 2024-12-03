@@ -5,9 +5,9 @@
  			reg = <0x0 0x51000000 0x0 0x00100000>;
  		};
 +
-+		ramoops_region: ramoops@51200000 {
++		ramoops_region@51200000 {
 +			compatible = "ramoops";
-+			reg = <0x0 0x51200000 0x0 0x00100000>;
++			reg = <0x0 0x51200000 0x0 0x100000>;
 +			no-map;
 +			record-size = <0x4000>;
 +			console-size = <0x4000>;
