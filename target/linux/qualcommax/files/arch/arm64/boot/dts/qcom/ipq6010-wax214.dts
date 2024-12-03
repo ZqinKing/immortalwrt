@@ -3,7 +3,7 @@
 /dts-v1/;
 
 #include "ipq6018.dtsi"
-#include "ipq6018-fixed-smps.dtsi"
+#include "ipq6018-common.dtsi"
 #include "ipq6018-ess.dtsi"
 #include "ipq6018-nss.dtsi"
 
@@ -104,10 +104,6 @@
 	label = "lan";
 };
 
-&edma {
-	status = "okay";
-};
-
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
@@ -144,10 +140,6 @@
 			phy_address = <4>;
 		};
 	};
-};
-
-&qpic_bam {
-	status = "okay";
 };
 
 &qpic_nand {

@@ -3,7 +3,7 @@
 /dts-v1/;
 
 #include "ipq6018-512m.dtsi"
-#include "ipq6018-fixed-smps.dtsi"
+#include "ipq6018-common.dtsi"
 #include "ipq6018-ess.dtsi"
 #include "ipq6018-nss.dtsi"
 
@@ -168,10 +168,6 @@
 	};
 };
 
-&edma {
-	status = "okay";
-};
-
 &dp1 {
 	status = "okay";
 	phy-handle = <&qca8075_0>;
@@ -201,10 +197,6 @@
 	phy-handle = <&qca8075_4>;
 	phy-mode = "psgmii";
 	label = "wan";
-};
-
-&qpic_bam {
-	status = "okay";
 };
 
 &blsp1_spi1 {
@@ -334,25 +326,5 @@
 &wifi {
 	qcom,ath11k-calibration-variant = "Yuncore-FAP650";
 	qcom,ath11k-fw-memory-mode = <1>;
-	status = "okay";
-};
-
-&qusb_phy_0 {
-	status = "okay";
-};
-
-&qusb_phy_1 {
-	status = "okay";
-};
-
-&ssphy_0 {
-	status = "okay";
-};
-
-&usb3 {
-	status = "okay";
-};
-
-&usb2 {
 	status = "okay";
 };

@@ -3,7 +3,7 @@
 /dts-v1/;
 
 #include "ipq6018.dtsi"
-#include "ipq6018-fixed-smps.dtsi"
+#include "ipq6018-common.dtsi"
 #include "ipq6018-ess.dtsi"
 #include "ipq6018-nss.dtsi"
 
@@ -302,20 +302,4 @@
 	status = "okay";
 	pinctrl-0 = <&usb_pwr_pins>;
 	pinctrl-names = "default";
-};
-
-&edma {
-	status = "okay";
-};
-
-&pcie_phy {
-	status = "okay";
-};
-
-&qusb_phy_0 {
-	status = "okay";
-};
-
-&ssphy_0 {
-	status = "okay";
 };

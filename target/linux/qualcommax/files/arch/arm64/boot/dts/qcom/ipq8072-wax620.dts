@@ -4,6 +4,7 @@
 
 #include "ipq8074.dtsi"
 #include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-common.dtsi"
 #include "ipq8074-ess.dtsi"
 #include "ipq8074-nss.dtsi"
 
@@ -114,10 +115,6 @@
 	};
 };
 
-&edma {
-	status = "okay";
-};
-
 &switch {
 	status = "okay";
 
@@ -170,10 +167,6 @@
 	label = "lan";
 };
 
-&qpic_bam {
-	status = "okay";
-};
-
 &qpic_nand {
 	status = "okay";
 
@@ -187,10 +180,6 @@
 			compatible = "qcom,smem-part";
 		};
 	};
-};
-
-&blsp1_uart5 {
-	status = "okay";
 };
 
 &wifi {

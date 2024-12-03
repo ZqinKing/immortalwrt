@@ -4,6 +4,7 @@
 
 #include "ipq8074-512m.dtsi"
 #include "ipq8074-ac-cpu.dtsi"
+#include "ipq8074-common.dtsi"
 #include "ipq8074-ess.dtsi"
 #include "ipq8074-nss.dtsi"
 
@@ -99,30 +100,6 @@
 			bias-pull-up;
 		};
 	};
-};
-
-&blsp1_uart3 {
-	status = "okay";
-};
-
-&blsp1_uart5 {
-	status = "okay";
-};
-
-&cryptobam {
-	status = "okay";
-};
-
-&crypto {
-	status = "okay";
-};
-
-&prng {
-	status = "okay";
-};
-
-&qpic_bam {
-	status = "okay";
 };
 
 &qpic_nand {
@@ -276,10 +253,6 @@
 			phy_address = <4>;
 		};
 	};
-};
-
-&edma {
-	status = "okay";
 };
 
 /*
