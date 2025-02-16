@@ -17,3 +17,5 @@ jdCloud ax6600 led screen ctrl
 
 
 
+感谢以下朋友的捐赠
+1. *姆
