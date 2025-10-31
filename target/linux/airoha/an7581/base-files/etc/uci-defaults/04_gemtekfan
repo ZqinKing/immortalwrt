@@ -7,9 +7,19 @@
 board=$(board_name)
 
 case "$board" in
-gemtek,w1700k)
+gemtek,w1700k | \
+    gemtek,w1701k)
     # Enable automatic fan control
     echo 2 > /sys/class/hwmon/hwmon3/pwm1_enable
+    echo 40000 > /sys/class/hwmon/hwmon3/pwm1_auto_point1_temp
+    echo 40 > /sys/class/hwmon/hwmon3/pwm1_auto_point1_pwm
+    echo 45000 > /sys/class/hwmon/hwmon3/pwm1_auto_point2_temp
+    echo 85 > /sys/class/hwmon/hwmon3/pwm1_auto_point2_pwm
+    echo 50000 > /sys/class/hwmon/hwmon3/pwm1_auto_point3_temp
+    echo 100 > /sys/class/hwmon/hwmon3/pwm1_auto_point3_pwm
+    echo 55000 > /sys/class/hwmon/hwmon3/pwm1_auto_point4_temp
+    echo 120 > /sys/class/hwmon/hwmon3/pwm1_auto_point4_pwm
+    echo 65000 > /sys/class/hwmon/hwmon3/pwm1_auto_point5_temp
     ;;
 esac
 
