@@ -87,6 +87,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	cetron,ct3003-ubootmod|\
+	bananapi,bpi-r4-lite|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	cmcc,rax3000me|\
@@ -260,6 +261,7 @@ platform_check_image() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	cetron,ct3003-ubootmod|\
+	bananapi,bpi-r4-lite|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	cmcc,rax3000me|\
@@ -318,6 +320,18 @@ platform_check_image() {
 
 platform_copy_config() {
 	case "$(board_name)" in
+	bananapi,bpi-r3|\
+	bananapi,bpi-r3-mini|\
+	bananapi,bpi-r4|\
+	bananapi,bpi-r4-2g5|\
+	bananapi,bpi-r4-poe|\
+	cmcc,rax3000m|\
+	gatonetworks,gdsp|\
+	mediatek,mt7988a-rfb)
+		if [ "$CI_METHOD" = "emmc" ]; then
+			emmc_copy_config
+		fi
+		;;
 	acer,predator-w6|\
 	acer,predator-w6d|\
 	acer,vero-w6m|\
@@ -345,6 +359,7 @@ platform_copy_config() {
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
+    bananapi,bpi-r4-lite|\
 	cmcc,rax3000m|\
 	cmcc,rax3000me|\
 	gatonetworks,gdsp|\
