@@ -12,7 +12,8 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-gemtek,w1700k)
+gemtek,w1700k | \
+    gemtek,w1701k)
     ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x4000"
     ;;
 esac
