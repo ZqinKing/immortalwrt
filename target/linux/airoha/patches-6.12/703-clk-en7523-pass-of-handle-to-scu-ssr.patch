@@ -14,7 +14,7 @@ Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
 
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
-@@ -1103,10 +1103,7 @@ static void en7581_clk_register_ssr(stru
+@@ -1162,10 +1162,7 @@ static void en7581_clk_register_ssr(stru
  	pinfo.data = &an7581_scu_ssr_data;
  	pinfo.size_data = sizeof(an7581_scu_ssr_data);
  

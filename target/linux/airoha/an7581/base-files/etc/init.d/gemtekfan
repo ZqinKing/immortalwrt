@@ -1,0 +1,41 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+USE_PROCD=1
+PROG=/sys/class/hwmon/hwmon3/pwm1_enable
+
+start_service() {
+    . /lib/functions.sh
+
+    board=$(board_name)
+
+    case "$board" in
+    gemtek,w1700k | \
+        gemtek,w1701k)
+        # Check if the hwmon directory exists
+        if [ -d "/sys/class/hwmon/hwmon3" ]; then
+            # Enable automatic fan control
+            echo 1 > /sys/class/hwmon/hwmon3/pwm1_enable
+            echo 1 > /sys/class/hwmon/hwmon3/pwm1
+            echo 40000 > /sys/class/hwmon/hwmon3/pwm1_auto_point1_temp
+            echo 40 > /sys/class/hwmon/hwmon3/pwm1_auto_point1_pwm
+            echo 45000 > /sys/class/hwmon/hwmon3/pwm1_auto_point2_temp
+            echo 85 > /sys/class/hwmon/hwmon3/pwm1_auto_point2_pwm
+            echo 50000 > /sys/class/hwmon/hwmon3/pwm1_auto_point3_temp
+            echo 100 > /sys/class/hwmon/hwmon3/pwm1_auto_point3_pwm
+            echo 55000 > /sys/class/hwmon/hwmon3/pwm1_auto_point4_temp
+            echo 120 > /sys/class/hwmon/hwmon3/pwm1_auto_point4_pwm
+            echo 65000 > /sys/class/hwmon/hwmon3/pwm1_auto_point5_temp
+            echo 2 > /sys/class/hwmon/hwmon3/pwm1_enable
+        fi
+        ;;
+    esac
+}
+
+stop_service() {
+    # Optional: Add logic to stop fan control if needed
+    # For now, we'll just let the system handle it
+    return 0
+}
