@@ -1,6 +1,6 @@
 --- a/db.txt
 +++ b/db.txt
-@@ -2036,13 +2036,12 @@ country US: DFS-FCC
+@@ -2088,13 +2088,12 @@ country US: DFS-FCC
  	# requirements, we can extend the range by 5 MHz to make the kernel
  	# happy and be able to use channel 144.
  	(5470 - 5730 @ 160), (24), DFS

@@ -19,6 +19,12 @@ gemtek,w1700k-ubi)
 	ucidef_set_led_netdev "lan4-yellow" "lan4" "yellow:lan-4" "lan4" "link_10 link_100"
 	ucidef_set_led_netdev "lan4-green" "lan4" "green:lan-4" "lan4" "link_1000 tx rx"
 	;;
+gemtek,w1701k-ubi)
+	ucidef_set_led_netdev "lan1-green" "lan1 2.5G" "mt7530_dsa-0:0e:green:lan" "lan1" "link_2500 tx rx"
+	ucidef_set_led_netdev "lan1-amber" "lan1 100/1000" "mt7530_dsa-0:0e:amber:lan" "lan1" "link_100 link_1000"
+	ucidef_set_led_netdev "wan-green" "wan 2.5G" "mt7530_dsa-0:0f:green:wan" "wan" "link_2500 tx rx"
+	ucidef_set_led_netdev "wan-amber" "wan 100/1000" "mt7530_dsa-0:0f:amber:wan" "wan" "link_100 link_1000"
+	;;
 esac
 
 board_config_flush

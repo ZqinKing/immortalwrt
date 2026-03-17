@@ -83,20 +83,7 @@ define Device/airoha_an7581-evb-emmc-kite
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc-kite
 
-define Device/gemtek_w1700k-ubi
-  DEVICE_VENDOR := Gemtek
-  DEVICE_MODEL := W1700K
-  DEVICE_VARIANT := UBI
-  DEVICE_ALT0_VENDOR := CenturyLink
-  DEVICE_ALT0_MODEL := W1700K
-  DEVICE_ALT0_VARIANT := UBI
-  DEVICE_ALT1_VENDOR := Lumen
-  DEVICE_ALT1_MODEL := W1700K
-  DEVICE_ALT1_VARIANT := UBI
-  DEVICE_ALT2_VENDOR := Quantum Fiber
-  DEVICE_ALT2_MODEL := W1700K
-  DEVICE_ALT2_VARIANT := UBI
-  DEVICE_DTS := an7581-w1700k-ubi
+define Device/gemtek_17xx-common
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Partition table has been changed to cooperate \
        with the vendor bootloader with regard to the BMT/BBT partition at \
@@ -116,10 +103,42 @@ define Device/gemtek_w1700k-ubi
   IMAGES := sysupgrade.itb
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   ARTIFACTS := chainload-uboot.itb
-  ARTIFACT/chainload-uboot.itb := an7581-chainloader gemtek_w1700k
   SOC := an7581
 endef
+
+define Device/gemtek_w1700k-ubi
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := W1700K
+  DEVICE_VARIANT := UBI
+  DEVICE_ALT0_VENDOR := CenturyLink
+  DEVICE_ALT0_MODEL := W1700K
+  DEVICE_ALT0_VARIANT := UBI
+  DEVICE_ALT1_VENDOR := Lumen
+  DEVICE_ALT1_MODEL := W1700K
+  DEVICE_ALT1_VARIANT := UBI
+  DEVICE_ALT2_VENDOR := Quantum Fiber
+  DEVICE_ALT2_MODEL := W1700K
+  DEVICE_ALT2_VARIANT := UBI
+  DEVICE_DTS := an7581-w1700k-ubi
+  ARTIFACT/chainload-uboot.itb := an7581-chainloader gemtek_w1700k
+  $(Device/gemtek_17xx-common)
+  DEVICE_PACKAGES += rtl826x-firmware
+endef
 TARGET_DEVICES += gemtek_w1700k-ubi
+
+define Device/gemtek_w1701k-ubi
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := W1701K
+  DEVICE_VARIANT := UBI
+  DEVICE_ALT0_VENDOR := Quantum Fiber
+  DEVICE_ALT0_MODEL := W1701K
+  DEVICE_ALT0_VARIANT := UBI
+  DEVICE_DTS := an7581-w1701k-ubi
+  ARTIFACT/chainload-uboot.itb := an7581-chainloader gemtek_w1701k
+  $(Device/gemtek_17xx-common)
+  DEVICE_PACKAGES += kmod-phy-airoha-en8811h
+endef
+TARGET_DEVICES += gemtek_w1701k-ubi
 
 define Device/nokia_valyrian
   DEVICE_VENDOR := Nokia
