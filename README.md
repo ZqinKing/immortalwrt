@@ -1,93 +1,213 @@
-<img src="https://avatars.githubusercontent.com/u/53193414?s=200&v=4" alt="logo" width="200" height="200" align="right">
+# OpenWrt with Qualcomm NSS hardware offload on the upstream EDMA driver
 
-# Project ImmortalWrt
+OpenWrt for **IPQ807x** (Qualcomm IPQ8074 / IPQ8071A) that runs **NSS network
+offload** — the two UBI32 packet-processing cores in the SoC — on top of OpenWrt
+main's **upstream `qca_edma` / `qca_ppe` ethernet and DSA drivers** from
+[openwrt/openwrt#22381](https://github.com/openwrt/openwrt/pull/22381).
 
-ImmortalWrt is a fork of [OpenWrt](https://openwrt.org), with more packages ported, more devices supported, default optimized profiles and localization modifications for mainland China users.<br/>
-Compared to upstream, we allow to use (non-upstreamable) modifications/hacks to provide better feature/performance/support.
+Every other NSS build replaces the ethernet stack with Qualcomm's out-of-tree
+`qca-nss-dp` + `qca-ssdk` drivers. This tree keeps the upstream drivers and
+attaches the NSS firmware to them through a small glue module — the first NSS
+integration to do so.
 
-Default login address: http://192.168.1.1 or http://immortalwrt.lan, username: __root__, password: _none_.
+Validated on the **Xiaomi AX3600** (IPQ8071A, 512 MB, PPPoE uplink):
 
-## Download
-Built firmware images are available for many architectures and come with a package selection to be used as WiFi home router. To quickly find a factory image usable to migrate from a vendor stock firmware to ImmortalWrt, try the *Firmware Selector*.
+| Workload | Host path | NSS offloaded |
+|---|---|---|
+| NAT + PPPoE routing @ ~310 Mbit/s | ~42 % of one core (softirq) | **99.7 % CPU idle** |
+| SQM shaping @ 285 Mbit | CPU-bound on this class of SoC | **99 % idle, 16 ms RTT under full load — no bufferbloat** |
 
-- [ImmortalWrt Firmware Selector](https://firmware-selector.immortalwrt.org/)
+## How traffic flows: host path vs NSS offload
 
-If your device is supported, please follow the **Info** link to see install instructions or consult the support resources listed below.
+After a plain reboot the router is **stock OpenWrt** — the CPU forwards every
+packet. The NSS data plane is armed explicitly at runtime; once it is up the
+firmware forwards established flows in hardware and the CPU only sees the first
+packet of each flow plus exceptions (broadcast/multicast, locally-bound, new
+connections). Every boot comes up on the host-only stack first; the `nss`
+service then arms the plane unless it is disabled.
 
-## Development
-To build your own firmware you need a GNU/Linux, BSD or macOS system (case sensitive filesystem required). Cygwin is unsupported because of the lack of a case sensitive file system.<br/>
+```mermaid
+flowchart TB
+    NIC(["LAN / WAN ports"])
 
-  ### Requirements
-  To build with this project, Debian 11 is preferred. And you need use the CPU based on AMD64 architecture, with at least 4GB RAM and 25 GB available disk space. Make sure the __Internet__ is accessible.
+    subgraph HOST["Host path — stock OpenWrt, active at every boot before arming"]
+      direction LR
+      H1["qca_edma<br/>conduit netdev"] --> H2["Linux datapath<br/>bridge · conntrack · NAT<br/>routing · PPPoE · qdisc"] --> H3{{"CPU softirq<br/>— every packet —"}} --> H1
+    end
 
-  The following tools are needed to compile ImmortalWrt, the package names vary between distributions.
+    subgraph OFF["NSS offload path — armed at runtime, reverts on reboot"]
+      direction LR
+      N1["PPE classifier +<br/>NSS firmware cores"] --> N2["NAT · PPPoE · VLAN<br/>L2 bridge · SQM shaper<br/>— every packet, in hardware —"]
+      N1 -. "miss / exception" .-> N3["ECM on host<br/>installs the flow rule<br/>on the first packet"]
+      N3 -. "flow rule" .-> N1
+    end
 
-  - Here is an example for Debian/Ubuntu users:<br/>
-    - Method 1:
-      <details>
-        <summary>Setup dependencies via APT</summary>
+    NIC --> HOST
+    NIC --> OFF
+```
 
-        ```bash
-        sudo apt update -y
-        sudo apt full-upgrade -y
-        sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
-          bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
-          g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
-          libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev \
-          libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano \
-          ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils \
-          python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs \
-          upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
-        ```
-      </details>
-    - Method 2:
-      ```bash
-      sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.org/init_build_environment.sh)'
-      ```
+## Documentation
 
-  Note:
-  - Do everything as an unprivileged user, not root, without sudo.
-  - Using CPUs based on other architectures should be fine to compile ImmortalWrt, but more hacks are needed - No warranty at all.
-  - You must __not__ have spaces or non-ascii characters in PATH or in the work folders on the drive.
-  - If you're using Windows Subsystem for Linux (or WSL), removing Windows folders from PATH is required, please see [Build system setup WSL](https://openwrt.org/docs/guide-developer/build-system/wsl) documentation.
-  - Using macOS as the host build OS is __not__ recommended. No warranty at all. You can get tips from [Build system setup macOS](https://openwrt.org/docs/guide-developer/build-system/buildroot.exigence.macosx) documentation.
-  - For more details, please see [Build system setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem) documentation.
+The [project wiki](https://github.com/JuliusBairaktaris/openwrt-nss-edma/wiki)
+covers the architecture, the firmware and source-pin rationale, the runtime
+bring-up sequence and its safety rules, SQM, hardware support and the
+limitations. New to NSS offload? Start with
+[NSS Offload Explained](https://github.com/JuliusBairaktaris/openwrt-nss-edma/wiki/NSS-Offload-Explained),
+which builds the concept up from scratch.
 
-  ### Quickstart
-  1. Run `git clone -b <branch> --single-branch --filter=blob:none https://github.com/immortalwrt/immortalwrt` to clone the source code.
-  2. Run `cd immortalwrt` to enter source directory.
-  3. Run `./scripts/feeds update -a` to obtain all the latest package definitions defined in feeds.conf / feeds.conf.default
-  4. Run `./scripts/feeds install -a` to install symlinks for all obtained packages into package/feeds/
-  5. Run `make menuconfig` to select your preferred configuration for the toolchain, target system & firmware packages.
-  6. Run `make` to build your firmware. This will download all sources, build the cross-compile toolchain and then cross-compile the GNU/Linux kernel & all chosen applications for your target system.
+## Branch layout (`nss-edma-rework`)
 
-  ### Related Repositories
-  The main repository uses multiple sub-repositories to manage packages of different categories. All packages are installed via the OpenWrt package manager called opkg. If you're looking to develop the web interface or port packages to ImmortalWrt, please find the fitting repository below.
-  - [LuCI Web Interface](https://github.com/immortalwrt/luci): Modern and modular interface to control the device via a web browser.
-  - [ImmortalWrt Packages](https://github.com/immortalwrt/packages): Community repository of ported packages.
-  - [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically focused on (mesh) routing.
-  - [OpenWrt Video](https://github.com/openwrt/video): Packages specifically focused on display servers and clients (Xorg and Wayland).
+The branch layers cleanly on upstream:
 
-## Support Information
-For a list of supported devices see the [OpenWrt Hardware Database](https://openwrt.org/supported_devices)
-  ### Documentation
-  - [Quick Start Guide](https://openwrt.org/docs/guide-quick-start/start)
-  - [User Guide](https://openwrt.org/docs/guide-user/start)
-  - [Developer Documentation](https://openwrt.org/docs/guide-developer/start)
-  - [Technical Reference](https://openwrt.org/docs/techref/start)
+1. [openwrt/openwrt](https://github.com/openwrt/openwrt) `main`.
+2. The commits of [PR #22381](https://github.com/openwrt/openwrt/pull/22381)
+   (Ansuel's EDMA/PPE driver rework), applied verbatim.
+3. The NSS integration series: ramoops crash forensics; the NSS device-tree
+   nodes for the IPQ807x boards; the `qca_edma` shared-EDMA hardening and TX/RX
+   redirect hooks; per-port firmware VSIs and bridge-mgr exports in `qca_ppe`;
+   the `kmod-qca-ppe-nss` glue module (with the `qca-nss-drv` probe gate); the
+   ECM and NSS-qdisc kernel support patches; iproute2 `tc` support for the NSS
+   qdiscs; the qca-mcs multicast snooping hooks (`0971`); the ath11k/mac80211
+   Wi-Fi-offload patches; and staging for nat46/MAP-T, macvlan (`0962`) and
+   vxlan-fdb (`0972`).
 
-  ### Support Community
-  - Support Chat: group [@ctcgfw_openwrt_discuss](https://t.me/ctcgfw_openwrt_discuss) on [Telegram](https://telegram.org/).
-  - Support Chat: group [#immortalwrt](https://matrix.to/#/#immortalwrt:matrix.org) on [Matrix](https://matrix.org/).
+The NSS packages (driver, ECM, qdisc/PPPoE managers, firmware, SQM script) live
+in the companion feed
+**[nss-packages](https://github.com/JuliusBairaktaris/nss-packages)**, branch
+`edma-nss`.
 
-## License
-ImmortalWrt is licensed under [GPL-2.0-only](https://spdx.org/licenses/GPL-2.0-only.html).
+## Prebuilt images
+
+**[Qualcommax_NSS_Builder](https://github.com/JuliusBairaktaris/Qualcommax_NSS_Builder)**
+builds this tree and the feed automatically whenever either moves. Grab the
+latest `edma-nss-*` tag from its
+[Releases](https://github.com/JuliusBairaktaris/Qualcommax_NSS_Builder/releases).
+Building from source is only needed to change something.
+
+## Quick start
+
+```sh
+git clone -b nss-edma-rework https://github.com/JuliusBairaktaris/openwrt-nss-edma.git
+cd openwrt-nss-edma
+
+# Start from the stock feeds and add the NSS feed. It provides kmod-qca-nss-drv
+# etc.; without it ATH11K_NSS_SUPPORT has an unmet dependency and menuconfig
+# aborts with a "recursive dependency".
+cp feeds.conf.default feeds.conf
+echo "src-git nss https://github.com/JuliusBairaktaris/nss-packages.git;edma-nss" >> feeds.conf
+
+./scripts/feeds update -a && ./scripts/feeds install -a
+./scripts/feeds list -r nss | grep -q qca-nss-drv && echo "nss feed OK"
+
+make menuconfig   # target qualcommax/ipq807x; select the NSS packages;
+                  # NSS_MEM_PROFILE_MEDIUM for 512 MB boards
+make -j$(nproc)
+```
+
+The image boots as a completely normal OpenWrt system on the plain host stack —
+**no NSS kernel module autoloads and the firmware is not in the boot critical
+path**. If you include the `nss-tools` package, its `nss` service arms the data
+plane at the end of boot (opt out with `uci set nss.general.enabled='0'`);
+otherwise bring it up by hand. Either way the device always finishes booting on
+the host stack first — see
+[Runtime Operation](https://github.com/JuliusBairaktaris/openwrt-nss-edma/wiki/Runtime-Operation)
+for the sequence and the safety rules.
+
+The tooling derives its targets at runtime — wired ports from the live DSA
+topology, the WAN interface from the default route, the SQM section by type,
+RPS onto every bridge — so it works unmodified on any ipq807x board and
+network config. The only deliberate assumption: when the WAN is down and the
+default route can't identify it, `nss-up` and `nssqos` fall back to the
+conventional logical interface name `wan` (nssqos offers a `wan_device`
+override).
+
+## NSS offload support matrix
+
+What the firmware data plane accelerates on this stack (whole IPQ807x family).
+Legend: ✅ offloaded & validated · 🟨 supported in code, opt-in, not validated
+here · ⬜ deliberately not carried (software path is used) · ❌ not available on
+this platform/firmware.
+
+| Feature | IPQ807x | Notes |
+|---|:---:|---|
+| IPv4 NAT / routing | ✅ | ECM, line rate, host ~idle |
+| IPv6 routing | ✅ | ECM |
+| PPPoE (incl. over 802.1Q VLAN) | ✅ | validated on a PPPoE/VLAN WAN |
+| 802.1Q VLAN | ✅ | ECM VLAN-tagged flows |
+| SQM shaper (nsstbl + nssfq_codel) | ✅ | `nss-edma.qos`; zero-bufferbloat verified |
+| Ingress shaping (IGS / nssmirred) | ✅ | `act_nssmirred` → ifb |
+| DSCP / mark classification | ✅ | ECM DSCP + mark classifiers |
+| CoDel ECN marking | ❌ | the 12.5 firmware does not ECN-mark (verified at firmware level); 11.4 not verified |
+| Wi-Fi AP (wifili) | ✅ | both radios (QCN5024 + QCN5054) |
+| Wi-Fi STA | 🟨 | wifili path present; AP is what's validated |
+| Wi-Fi WDS | 🟨 | not validated |
+| Wi-Fi mesh | ✅¹ | offloaded with the NSS firmware 11.4 build option (`ATH11K_NSS_MESH_SUPPORT`); on the default 12.5 firmware mesh stays on the host path |
+| Wi-Fi AP-VLAN | ❌ | broken in the ath11k driver |
+| Bridge (wired LAN, same-subnet L2) | ✅ | `nss-bridge-mgr`; firmware hardware-bridges the wired ports (host idle). Wi-Fi members stay host-side until Wi-Fi offload |
+| Inter-subnet routing (two subnets on one bridge) | ✅ | same-bridge hairpin route `lan1→lan2` accelerated (`accel_mode=2`, host flat), no config change |
+| Multicast (same-subnet / bridged) | ✅ | `qca-mcs` snooping; PPE hardware-bridges to snooped members, host flat |
+| Multicast (routed across subnets) | 🟨 | ECM `mc_create` path + kernel ipmr hooks built; needs a multicast-routing daemon (igmpproxy/smcroute) and a two-VIF topology |
+| GRE | 🟨 | ECM support builds with `kmod-gre`; not in the default config |
+| MAP-T / DS-Lite | 🟨 | needs `kmod-nat46` |
+| 6RD / IPIP6 (SIT) | 🟨 | needs `kmod-sit` / `kmod-ip6-tunnel` |
+| VXLAN | 🟨 | needs `kmod-vxlan` |
+| OVS bridge | ⬜ | `nss-bridge-mgr` OVS path compiled out; would need `kmod-qca-ovsmgr` |
+| MACVLAN | 🟨 | kernel patch carried; needs `kmod-macvlan` |
+| L2TPv2 / PPTP | ⬜ | ECM interface off — those kernel hooks are not ported |
+| Bonding / LAG | ⬜ | kernel bonding hooks not carried |
+| IPsec (ESP) | ❌ | not viable on IPQ807x; `nss-crypto`/`cfi` not carried |
+| TLS / DTLS / CAPWAP | ❌ | not supported (matches the vendor matrix) |
+
+The opt-in rows are build-verified against this tree: selecting `kmod-nat46`,
+`kmod-vxlan`, `kmod-macvlan`, `kmod-gre`, `kmod-sit` or `kmod-ip6-tunnel` turns
+the matching ECM interface support on and links cleanly. Bonding/LAG and
+L2TPv2/PPTP stay off by design — their QCA kernel hooks are not carried, and
+the ECM package forces those interface types off so selecting the kmods cannot
+break the build. `kmod-ipsec` also builds, but ESP flows stay on the host path
+(no NSS crypto on this platform).
+
+All IPQ807x-family boards carry the NSS device-tree nodes; per-board validation
+reports are the open item.
+
+### ¹ 802.11s mesh offload (firmware 11.4 build option)
+
+Mesh offload is a firmware capability: NSS firmware 11.4.0.5 is the only
+line that supports mesh interfaces — every newer published firmware
+rejects them at the firmware level (verified on 12.5-210). Selecting
+`ATH11K_NSS_MESH_SUPPORT` therefore requires `NSS_FIRMWARE_VERSION_11_4`
+(same firmware tarball). Everything else works on 11.4 as on 12.5 —
+NAT/routing, PPPoE/VLAN, wifili AP offload, bridge, multicast, and SQM
+with the same `nss-edma.qos` script (the qdisc module selects the
+firmware's statistics format at build time); all verified live on
+11.4.0.5-6. On 12.5 images, mesh interfaces keep Wi-Fi on the host path
+and everything wired stays offloaded.
 
 ## Acknowledgements
-<table>
-  <tr>
-    <td><a href="https://dlercloud.com/"><img src="https://user-images.githubusercontent.com/22235437/111103249-f9ec6e00-8588-11eb-9bfc-67cc55574555.png" width="183" height="52" border="0" alt="Dler Cloud"></a></td>
-    <td><a href="https://www.jetbrains.com/"><img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_square.png" width="120" height="120" border="0" alt="JetBrains Black Box Logo logo"></a></td>
-    <td><a href="https://sourceforge.net/"><img src="https://sourceforge.net/sflogo.php?type=17&group_id=3663829" alt="SourceForge" width=200></a></td>
-  </tr>
-</table>
+
+- [Ansuel / Christian Marangi](https://github.com/Ansuel) — the upstream
+  EDMA/PPE driver rework (PR #22381) this is built on.
+- [qosmio](https://github.com/qosmio/openwrt-ipq) — the community NSS builds
+  whose packaging and kernel-compatibility work the package feed derives from,
+  and the prepackaged firmware tarballs.
+- Qualcomm / CodeLinaro for the open-source NSS host components.
+
+## Support the project
+
+This is an unpaid, single-maintainer effort. If this work is useful to you,
+consider chipping in — it goes toward IPQ807x development and hardware to start
+looking into **IPQ50xx** and **IPQ60xx** next.
+
+- **[GitHub Sponsors](https://github.com/sponsors/JuliusBairaktaris)** — zero-fee, GitHub-native
+- **[PayPal](https://paypal.me/JuliusBairaktaris)** — one-off donations
+
+Thank you!
+
+## License
+
+OpenWrt is licensed under GPL-2.0; see [LICENSE](LICENSE). The NSS vendor
+components retain their respective upstream licenses.
+
+---
+
+*A development fork. For OpenWrt itself, see
+[openwrt/openwrt](https://github.com/openwrt/openwrt).*
