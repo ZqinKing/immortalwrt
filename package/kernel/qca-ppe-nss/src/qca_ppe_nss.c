@@ -45,7 +45,8 @@
  * mask means reloading qca-nss-drv.
  *
  * PPE port id == DSA user port index == OOB tag port == NSS phys_if
- * number (1..6); the CPU port 0 is the qca-edma conduit.
+ * number (1..6 on IPQ807x, 1..5 on IPQ60xx); the CPU port 0 is the
+ * qca-edma conduit.
  *
  * Lock order everywhere: rtnl -> ppe_nss_lock.
  */
@@ -85,6 +86,30 @@ static DEFINE_MUTEX(ppe_nss_lock);
 static unsigned long ppe_nss_fw_mask;
 static struct dentry *ppe_nss_dentry;
 static atomic_t ppe_nss_rx_unexpected = ATOMIC_INIT(0);
+static int ppe_nss_max_interfaces = NSS_DP_MAX_INTERFACES;
+
+static bool ppe_nss_if_num_valid(int if_num)
+{
+	return if_num >= NSS_DP_START_IFNUM && if_num < ppe_nss_max_interfaces;
+}
+
+static unsigned long ppe_nss_valid_if_mask(void)
+{
+	unsigned long mask = 0;
+	int i;
+
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++)
+		__set_bit(i, &mask);
+
+	return mask;
+}
+
+static void ppe_nss_detect_soc(void)
+{
+	if (of_machine_is_compatible("qcom,ipq6018") ||
+	    of_machine_is_compatible("qcom,ipq6010"))
+		ppe_nss_max_interfaces = 6;
+}
 
 /*
  * Resolve the DSA user port with the given port index on a qca-edma
@@ -294,7 +319,7 @@ struct net_device *nss_dp_get_netdev_by_nss_if_num(int if_num)
 {
 	struct net_device *netdev = NULL;
 
-	if (if_num < NSS_DP_START_IFNUM || if_num >= NSS_DP_MAX_INTERFACES)
+	if (!ppe_nss_if_num_valid(if_num))
 		return NULL;
 
 	mutex_lock(&ppe_nss_lock);
@@ -325,7 +350,7 @@ int nss_dp_override_data_plane(struct net_device *netdev,
 		return NSS_DP_FAILURE;
 
 	mutex_lock(&ppe_nss_lock);
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		struct ppe_nss_port *port = &ppe_nss_ports[i];
 
 		if (!port->armed || port->netdev != netdev)
@@ -374,7 +399,7 @@ void nss_dp_start_data_plane(struct net_device *netdev,
 
 	rtnl_lock();
 	mutex_lock(&ppe_nss_lock);
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		struct ppe_nss_port *port = &ppe_nss_ports[i];
 
 		if (!port->overridden || port->netdev != netdev)
@@ -404,7 +429,7 @@ void nss_dp_restore_data_plane(struct net_device *netdev)
 
 	rtnl_lock();
 	mutex_lock(&ppe_nss_lock);
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		struct ppe_nss_port *port = &ppe_nss_ports[i];
 
 		if (!port->overridden || port->netdev != netdev)
@@ -447,7 +472,7 @@ void nss_dp_receive(struct net_device *netdev, struct sk_buff *skb,
 	int i;
 
 	if (likely(netdev)) {
-		for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+		for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 			if (ppe_nss_ports[i].netdev == netdev) {
 				port = &ppe_nss_ports[i];
 				break;
@@ -613,8 +638,9 @@ static int ppe_nss_fw_disarm(int if_num)
  * Every if_num that currently has a DSA user port on a qca_edma conduit -
  * i.e. every wired port this board can offload. The set is discovered from
  * the live DSA topology, not hardcoded, so the same logic works across the
- * whole ipq807x family (the per-board port<->if_num map differs: AX3600 uses
- * if_num 2-5, the DL-WRX36 uses 1-4 + 6). Caller holds rtnl.
+ * whole qualcommax NSS family (the per-board port<->if_num map differs:
+ * AX3600 uses if_num 2-5, the DL-WRX36 uses 1-4 + 6, IPQ60xx uses 1-5).
+ * Caller holds rtnl.
  */
 static unsigned long ppe_nss_discover_mask(void)
 {
@@ -623,7 +649,7 @@ static unsigned long ppe_nss_discover_mask(void)
 	int i;
 
 	ASSERT_RTNL();
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++)
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++)
 		if (ppe_nss_find_user_port(i, &conduit))
 			__set_bit(i, &mask);
 	return mask;
@@ -640,12 +666,12 @@ static int ppe_nss_fw_mask_apply(unsigned long mask, bool discover)
 	if (discover)
 		mask = ppe_nss_discover_mask();
 
-	if (mask & ~GENMASK(NSS_DP_MAX_INTERFACES - 1, NSS_DP_START_IFNUM)) {
+	if (mask & ~ppe_nss_valid_if_mask()) {
 		ret = -EINVAL;
 		goto out;
 	}
 
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		if (test_bit(i, &mask) && !test_bit(i, &ppe_nss_fw_mask))
 			ret = ppe_nss_fw_arm(i);
 		else if (!test_bit(i, &mask) && test_bit(i, &ppe_nss_fw_mask))
@@ -731,7 +757,7 @@ static void ppe_nss_event_unregister(struct net_device *dev)
 {
 	int i;
 
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		struct ppe_nss_port *port = &ppe_nss_ports[i];
 
 		if (port->netdev != dev && port->conduit != dev)
@@ -782,7 +808,7 @@ static int ppe_nss_netdev_event(struct notifier_block *nb,
 		goto out;
 	}
 
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		if (ppe_nss_ports[i].armed && ppe_nss_ports[i].netdev == dev) {
 			port = &ppe_nss_ports[i];
 			break;
@@ -835,7 +861,7 @@ static int ppe_nss_status_show(struct seq_file *m, void *v)
 	seq_printf(m, "rx_unexpected: %d\n",
 		   atomic_read(&ppe_nss_rx_unexpected));
 	seq_printf(m, "fw_mask: 0x%lx\n", ppe_nss_fw_mask);
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		struct ppe_nss_port *port = &ppe_nss_ports[i];
 
 		seq_printf(m,
@@ -856,15 +882,22 @@ DEFINE_SHOW_ATTRIBUTE(ppe_nss_status);
  * NSS-block clocks the firmware needs at runtime that no host driver
  * enables on the qca_edma/qca_ppe stack. In the old stack these were
  * enabled by qca-ssdk / qca-nss-crypto. The firmware accesses these
- * blocks (NSS core 1 boots with crypto/ipsec/tls features) and a
- * gated clock turns that access into a silent NoC stall — observed as
- * a hard SoC hang right after "NSS core 1 booted successfully".
- * IDs from dt-bindings/clock/qcom,gcc-ipq8074.h.
+ * blocks (for example crypto/ipsec/tls and inactive uniphy domains) and a
+ * gated clock turns that access into a silent NoC stall. IDs are from the
+ * SoC-specific dt-bindings/clock/qcom,gcc-*.h headers.
  */
-static const struct {
+struct ppe_nss_aux_clk {
 	unsigned int id;
 	const char *name;
-} ppe_nss_aux_clks[] = {
+};
+
+struct ppe_nss_aux_clk_data {
+	const char *gcc_compatible;
+	const struct ppe_nss_aux_clk *clks;
+	size_t nclks;
+};
+
+static const struct ppe_nss_aux_clk ppe_nss_aux_clks_ipq8074[] = {
 	{ 159, "gcc_nssnoc_crypto_clk" },
 	{ 227, "gcc_crypto_ppe_clk" },
 	/*
@@ -883,38 +916,84 @@ static const struct {
 	{ 217, "gcc_uniphy2_port6_tx_clk" },
 };
 
+static const struct ppe_nss_aux_clk ppe_nss_aux_clks_ipq6018[] = {
+	{ 117, "gcc_nssnoc_crypto_clk" },
+	{ 92, "gcc_crypto_ppe_clk" },
+	{ 153, "gcc_uniphy1_ahb_clk" },
+	{ 154, "gcc_uniphy1_port5_rx_clk" },
+	{ 155, "gcc_uniphy1_port5_tx_clk" },
+	{ 156, "gcc_uniphy1_sys_clk" },
+};
+
+static const struct ppe_nss_aux_clk_data ppe_nss_aux_clk_data[] = {
+	{
+		.gcc_compatible = "qcom,gcc-ipq8074",
+		.clks = ppe_nss_aux_clks_ipq8074,
+		.nclks = ARRAY_SIZE(ppe_nss_aux_clks_ipq8074),
+	}, {
+		.gcc_compatible = "qcom,gcc-ipq6018",
+		.clks = ppe_nss_aux_clks_ipq6018,
+		.nclks = ARRAY_SIZE(ppe_nss_aux_clks_ipq6018),
+	},
+};
+
+static struct clk *ppe_nss_enabled_aux_clks[ARRAY_SIZE(ppe_nss_aux_clks_ipq8074)];
+static int ppe_nss_enabled_aux_clk_count;
+
+static void ppe_nss_disable_aux_clks(void)
+{
+	while (ppe_nss_enabled_aux_clk_count) {
+		struct clk *clk;
+
+		clk = ppe_nss_enabled_aux_clks[--ppe_nss_enabled_aux_clk_count];
+		ppe_nss_enabled_aux_clks[ppe_nss_enabled_aux_clk_count] = NULL;
+		clk_disable_unprepare(clk);
+		clk_put(clk);
+	}
+}
+
 static void ppe_nss_enable_aux_clks(void)
 {
-	struct device_node *gcc;
+	const struct ppe_nss_aux_clk_data *data = NULL;
+	struct device_node *gcc = NULL;
 	int i;
 
-	gcc = of_find_compatible_node(NULL, NULL, "qcom,gcc-ipq8074");
+	for (i = 0; i < ARRAY_SIZE(ppe_nss_aux_clk_data); i++) {
+		gcc = of_find_compatible_node(NULL, NULL,
+						  ppe_nss_aux_clk_data[i].gcc_compatible);
+		if (gcc) {
+			data = &ppe_nss_aux_clk_data[i];
+			break;
+		}
+	}
+
 	if (!gcc) {
 		pr_warn("qca-ppe-nss: gcc node not found, aux clocks not enabled\n");
 		return;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(ppe_nss_aux_clks); i++) {
+	for (i = 0; i < data->nclks; i++) {
 		struct of_phandle_args args = {
 			.np = gcc,
 			.args_count = 1,
-			.args = { ppe_nss_aux_clks[i].id },
+			.args = { data->clks[i].id },
 		};
 		struct clk *clk = of_clk_get_from_provider(&args);
 
 		if (IS_ERR(clk)) {
 			pr_warn("qca-ppe-nss: %s lookup failed (%ld)\n",
-				ppe_nss_aux_clks[i].name, PTR_ERR(clk));
+				data->clks[i].name, PTR_ERR(clk));
 			continue;
 		}
 		if (clk_prepare_enable(clk)) {
 			pr_warn("qca-ppe-nss: %s enable failed\n",
-				ppe_nss_aux_clks[i].name);
+				data->clks[i].name);
 			clk_put(clk);
 			continue;
 		}
 		pr_info("qca-ppe-nss: enabled %s for NSS fw\n",
-			ppe_nss_aux_clks[i].name);
+			data->clks[i].name);
+		ppe_nss_enabled_aux_clks[ppe_nss_enabled_aux_clk_count++] = clk;
 	}
 	of_node_put(gcc);
 }
@@ -924,7 +1003,9 @@ static int __init qca_ppe_nss_init(void)
 	int ret;
 	int i;
 
-	for (i = 0; i < NSS_DP_MAX_INTERFACES; i++)
+	ppe_nss_detect_soc();
+
+	for (i = 0; i < ppe_nss_max_interfaces; i++)
 		ppe_nss_ports[i].fw_vsi = -1;
 
 	ret = register_netdevice_notifier(&ppe_nss_netdev_nb);
@@ -937,7 +1018,8 @@ static int __init qca_ppe_nss_init(void)
 			    &ppe_nss_status_fops);
 	debugfs_create_file("fw_mask", 0644, ppe_nss_dentry, NULL,
 			    &ppe_nss_fw_mask_fops);
-	pr_info("qca-ppe-nss: NSS data-plane glue loaded (phase 2b: fw data plane)\n");
+	pr_info("qca-ppe-nss: NSS data-plane glue loaded (phys_if %d..%d)\n",
+		NSS_DP_START_IFNUM, ppe_nss_max_interfaces - 1);
 	return 0;
 }
 
@@ -954,7 +1036,7 @@ static void __exit qca_ppe_nss_exit(void)
 	 * ports remain.
 	 */
 	mutex_lock(&ppe_nss_lock);
-	for (i = NSS_DP_START_IFNUM; i < NSS_DP_MAX_INTERFACES; i++) {
+	for (i = NSS_DP_START_IFNUM; i < ppe_nss_max_interfaces; i++) {
 		struct ppe_nss_port *port = &ppe_nss_ports[i];
 
 		if (port->armed) {
@@ -966,6 +1048,7 @@ static void __exit qca_ppe_nss_exit(void)
 
 	ppe_nss_gate_drop();
 	unregister_netdevice_notifier(&ppe_nss_netdev_nb);
+	ppe_nss_disable_aux_clks();
 }
 
 module_init(qca_ppe_nss_init);

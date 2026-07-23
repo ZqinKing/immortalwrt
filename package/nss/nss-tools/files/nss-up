@@ -16,8 +16,8 @@ modprobe qca-nss-drv 2>/dev/null || true
 
 # "all" arms every wired port the board exposes - the glue discovers the
 # per-device DSA port<->if_num map from the live topology, so this works across
-# the ipq807x family (AX3600 resolves to 0x3c, DL-WRX36 to 0x5e, etc.) with no
-# board-specific mask.
+# supported qualcommax NSS boards (AX3600 resolves to 0x3c, DL-WRX36 to 0x5e,
+# IPQ60xx external ports resolve to 1..5) with no board-specific mask.
 echo all > $FWM
 [ "$(cat $FWM)" != "0x0" ] || { echo "arming failed, fw not booted"; exit 1; }
 # nss-drv hands the armed ports their data plane from a one-shot workqueue
@@ -88,6 +88,8 @@ modprobe qca-nss-pppoe 2>/dev/null || true
 # path - mesh works normally there and all wired offload stays active.
 mesh_cfg=0
 uci -q show wireless | grep -q "\.mode='mesh'" && mesh_cfg=1
+wifi_offload=$(uci -q get nss.general.wifi_offload)
+[ -n "$wifi_offload" ] || wifi_offload=1
 fw_mesh=0
 # qca-nss0.bin is a symlink the firmware hotplug script creates on the first
 # arm; on a freshly flashed image it does not exist yet - fall back to the
@@ -101,7 +103,10 @@ esac
 # the rebind, wait for the same set of phys that existed before it instead of
 # assuming a fixed count.
 nphy=$(ls /sys/class/ieee80211/ 2>/dev/null | wc -l)
-if [ "$mesh_cfg" = 1 ] && [ "$fw_mesh" != 1 ]; then
+if [ "$wifi_offload" != 1 ]; then
+  echo "Wi-Fi NSS offload disabled by config; wired NSS offload only"
+  /etc/init.d/qca-nss-pbuf start
+elif [ "$mesh_cfg" = 1 ] && [ "$fw_mesh" != 1 ]; then
   echo "mesh interface configured: Wi-Fi stays on the host path (mesh offload needs the 11.4 NSS firmware and a mesh-enabled build)"
   # Wi-Fi stays host-mode, so pbuf leaves the NSS auto-scaler enabled and
   # the cores scale with the wired-offload load on their own.
@@ -145,18 +150,22 @@ else
 fi
 
 # Firmware RPS hashes host-terminated flows onto N2H queue 0, whose NAPI
-# runs on core 0 - without further spreading, all local receive processing
-# (TCP to the router itself, wifili exceptions) serializes there. Fan the
-# receive softirq work out to the other cores with Linux RPS on the
-# delivery netdevs: every bridge (whatever its name) plus the Wi-Fi VAPs
-# (which exist only after the Wi-Fi stage above). Mask 'e' = cores 1-3;
-# every ipq807x is a quad A53.
+# runs on core 0. Fan the receive softirq work out to online non-boot cores
+# when the SoC has them; single-core systems get mask 0 and keep RPS off.
+rps_mask=0
+for cpu in /sys/devices/system/cpu/cpu[1-9]*; do
+  [ -d "$cpu" ] || continue
+  [ "$(cat "$cpu/online" 2>/dev/null || echo 1)" = 1 ] || continue
+  n=${cpu##*/cpu}
+  rps_mask=$((rps_mask | (1 << n)))
+done
+rps_mask=$(printf %x "$rps_mask")
 for br in /sys/class/net/*/bridge; do
   q="${br%/bridge}/queues/rx-0/rps_cpus"
-  [ -w "$q" ] && echo e > "$q"
+  [ -w "$q" ] && echo "$rps_mask" > "$q"
 done
 for q in /sys/class/net/phy*-ap*/queues/rx-0/rps_cpus; do
-  [ -w "$q" ] && echo e > "$q"
+  [ -w "$q" ] && echo "$rps_mask" > "$q"
 done
 
 # WAN + SQM bring-up is best-effort with retries (set +e is in effect).

@@ -9,8 +9,8 @@
  * the NSS data-plane override to the DSA user ports created by qca_ppe
  * instead of nss-dp's own netdevs.
  *
- * Constants below are the IPQ807x values from qca-nss-dp
- * hal/soc_ops/ipq807x/nss_ipq807x.h (NSS phys_if numbers 1..6).
+ * Constants below reserve the largest supported phys_if range. qca-ppe-nss
+ * constrains the live range at runtime for smaller SoCs such as IPQ60xx.
  */
 
 #ifndef __NSS_DP_API_IF_H
@@ -26,7 +26,7 @@
 #define NSS_DP_FAILURE	-1
 
 /*
- * IPQ807x platform defines (from nss-dp nss_ipq807x.h)
+ * Platform defines (IPQ807x maximum; IPQ60xx uses phys_if numbers 1..5).
  */
 #define NSS_DP_HAL_MAX_PORTS	6
 #define NSS_DP_HAL_START_IFNUM	1

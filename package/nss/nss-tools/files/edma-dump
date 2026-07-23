@@ -10,6 +10,15 @@
 #
 # Usage: edma-dump [general|txdesc|txcmpl|rxdesc|rxfill|full] [ring_num]
 
+compatible=
+[ -r /proc/device-tree/compatible ] && compatible=$(tr '\0' '\n' < /proc/device-tree/compatible 2>/dev/null)
+case "$compatible" in
+	*ipq60*|*ipq601*)
+		echo "edma-dump: IPQ60xx EDMA register geometry is not implemented; refusing IPQ807x offsets" >&2
+		exit 1
+		;;
+esac
+
 BASE=0x3ab00000
 
 # IPQ807x ring geometry (qca_edma ipq807x_data): the host driver owns the

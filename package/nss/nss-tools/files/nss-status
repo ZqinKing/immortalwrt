@@ -164,7 +164,7 @@ if [ "$L2" = 1 ]; then
 	edp=/sys/kernel/debug/qca-nss-drv/stats/edma/ports
 	echo "NSS L2 per-port datapath:"
 	printf "  %-6s %-4s %-4s %-4s %13s %12s %12s %12s\n" port ifn car vsi "host->fw" "fw->host" "wire->fw" "fw->wire"
-	for pn in 2 3 4 5; do
+	for pn in 1 2 3 4 5 6; do
 		line=$(grep "if_num $pn:" "$GLUE/status" 2>/dev/null)
 		nd=$(echo "$line" | sed -n 's/.*netdev=\([^ ]*\).*/\1/p')
 		[ -z "$nd" ] || [ "$nd" = "-" ] && continue

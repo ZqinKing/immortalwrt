@@ -24,10 +24,12 @@ endef
 define Package/nss-tools/description
  Brings the opt-in NSS data plane up in the required order at boot (the
  'nss' service running /usr/sbin/nss-up: firmware arm, bridge/multicast/
- ECM/PPPoE managers, Wi-Fi offload flip, SQM), reports its health via
+ ECM/PPPoE managers, optional Wi-Fi offload flip, SQM), reports its health via
  /usr/sbin/nss-status (-j for JSON) and captures EDMA/PPE registers with
- edma-dump (needs a devmem-enabled busybox). Nothing autoloads: disable
- with "uci set nss.general.enabled='0'" to stay on the plain host stack.
+ edma-dump (needs a devmem-enabled busybox). IPQ60xx validation images default
+ to no automatic arming; enable with "uci set nss.general.enabled='1'" once the
+ host path is verified. Disable with "uci set nss.general.enabled='0'" to stay
+ on the plain host stack.
  Pulls in the complete NSS runtime package set.
 endef
 

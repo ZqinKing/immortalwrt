@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include "ipq6010-re-cs.dtsi"
+#include "ipq6018-nss.dtsi"
 
 / {
 	model = "JDCloud RE-CS-02";

@@ -6,4 +6,16 @@ set network.@device[0].flow_offloading='0'
 set network.@device[0].flow_offloading_hw='0'
 EOI
 
+[ -r /etc/openwrt_release ] && . /etc/openwrt_release
+case "$DISTRIB_TARGET" in
+	qualcommax/ipq60xx)
+		uci -q batch <<-EOI
+		set nss.general='nss'
+		set nss.general.enabled='0'
+		set nss.general.wifi_offload='0'
+		EOI
+		uci -q commit nss
+		;;
+esac
+
 exit 0
