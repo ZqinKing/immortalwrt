@@ -1,6 +1,6 @@
---- a/drivers/net/phy/mediatek/mtk-ge-soc.c	2025-06-15 22:32:46.110001496 +0800
-+++ b/drivers/net/phy/mediatek/mtk-ge-soc.c	2025-06-16 21:13:04.290000141 +0800
-@@ -1208,7 +1208,7 @@
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -1208,7 +1208,7 @@ static int mt798x_phy_calibration(struct
  
  	if (!buf[0] || !buf[1] || !buf[2] || !buf[3] || len < 4 * sizeof(u32)) {
  		phydev_err(phydev, "invalid efuse data\n");
@@ -9,7 +9,7 @@
  		goto out;
  	}
  
-@@ -1463,6 +1463,7 @@
+@@ -1463,6 +1463,7 @@ static struct phy_driver mtk_socphy_driv
  		.config_intr	= genphy_no_config_intr,
  		.handle_interrupt = genphy_handle_interrupt_no_ack,
  		.probe		= mt7981_phy_probe,
@@ -17,7 +17,7 @@
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.read_page	= mtk_phy_read_page,
-@@ -1480,6 +1481,7 @@
+@@ -1480,6 +1481,7 @@ static struct phy_driver mtk_socphy_driv
  		.config_intr	= genphy_no_config_intr,
  		.handle_interrupt = genphy_handle_interrupt_no_ack,
  		.probe		= mt7988_phy_probe,
@@ -25,9 +25,8 @@
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.read_page	= mtk_phy_read_page,
-diff -u -r a/drivers/net/phy/mediatek/mtk.h b/drivers/net/phy/mediatek/mtk.h
---- a/drivers/net/phy/mediatek/mtk.h	2025-06-15 22:32:46.110001496 +0800
-+++ b/drivers/net/phy/mediatek/mtk.h	2025-06-16 21:11:47.089000105 +0800
+--- a/drivers/net/phy/mediatek/mtk.h
++++ b/drivers/net/phy/mediatek/mtk.h
 @@ -11,12 +11,30 @@
  #define MTK_EXT_PAGE_ACCESS			0x1f
  #define MTK_PHY_PAGE_STANDARD			0x0000
@@ -59,7 +58,7 @@ diff -u -r a/drivers/net/phy/mediatek/mtk.h b/drivers/net/phy/mediatek/mtk.h
  /* Registers on MDIO_MMD_VEND2 */
  #define MTK_PHY_LED0_ON_CTRL			0x24
  #define MTK_PHY_LED1_ON_CTRL			0x26
-@@ -81,7 +99,7 @@
+@@ -81,7 +99,7 @@ void __mtk_tr_set_bits(struct phy_device
  		       u8 data_addr, u32 set);
  void __mtk_tr_clr_bits(struct phy_device *phydev, u8 ch_addr, u8 node_addr,
  		       u8 data_addr, u32 clr);
@@ -68,10 +67,9 @@ diff -u -r a/drivers/net/phy/mediatek/mtk.h b/drivers/net/phy/mediatek/mtk.h
  int mtk_phy_read_page(struct phy_device *phydev);
  int mtk_phy_write_page(struct phy_device *phydev, int page);
  
-diff -u -r a/drivers/net/phy/mediatek/mtk-phy-lib.c b/drivers/net/phy/mediatek/mtk-phy-lib.c
---- a/drivers/net/phy/mediatek/mtk-phy-lib.c	2025-06-15 22:32:46.110001496 +0800
-+++ b/drivers/net/phy/mediatek/mtk-phy-lib.c	2025-06-16 21:10:32.784000069 +0800
-@@ -361,6 +361,45 @@
+--- a/drivers/net/phy/mediatek/mtk-phy-lib.c
++++ b/drivers/net/phy/mediatek/mtk-phy-lib.c
+@@ -361,6 +361,45 @@ void mtk_phy_leds_state_init(struct phy_
  }
  EXPORT_SYMBOL_GPL(mtk_phy_leds_state_init);
  
@@ -117,18 +115,8 @@ diff -u -r a/drivers/net/phy/mediatek/mtk-phy-lib.c b/drivers/net/phy/mediatek/m
  MODULE_DESCRIPTION("MediaTek Ethernet PHY driver common");
  MODULE_AUTHOR("Sky Huang <SkyLake.Huang@mediatek.com>");
  MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
-diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2025-06-15 22:32:46.146001496 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h	2025-06-16 22:18:52.874002024 +0800
-@@ -26,7 +26,7 @@
- #define MTK_MAX_DSA_PORTS	7
- #define MTK_DSA_PORT_MASK	GENMASK(2, 0)
- 
--#define MTK_QDMA_NUM_QUEUES	16
-+#define MTK_QDMA_NUM_QUEUES	16
- #define MTK_QDMA_QUEUE_MASK	((1ULL << MTK_QDMA_NUM_QUEUES) - 1)
- #define MTK_QDMA_PAGE_SIZE	2048
- #define MTK_MAX_RX_LENGTH	1536
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -439,7 +439,7 @@
  
  /* QDMA TX NUM */
@@ -137,10 +125,10 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
 +#define MTK_QDMA_GMAC2_QID	32
  
  #define MTK_TX_DMA_BUF_SHIFT	8
-
---- a/drivers/net/ethernet/mediatek/mtk_eth_dbg.c	2025-06-13 10:19:12.000000000 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_dbg.c	2025-06-17 20:32:50.093002976 +0800
-@@ -68,7 +68,7 @@
+ 
+--- a/drivers/net/ethernet/mediatek/mtk_eth_dbg.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_dbg.c
+@@ -68,7 +68,7 @@ static int qdma_pppq_show(struct seq_fil
  	int i;
  
  	seq_puts(m, "Usage of the QDMA PPPQ for the HW path:\n");
@@ -149,7 +137,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  		seq_printf(m, "qdma_txq%d:	%5d Mbps %8d refcnt\n",
  			   i, eth->qdma_shaper.speed[i],
  			   atomic_read(&eth->qdma_shaper.refcnt[i]));
-@@ -150,7 +150,7 @@
+@@ -150,7 +150,7 @@ static ssize_t qdma_sched_show(struct fi
  			 "EN\tScheduling\tMAX\tQueue#\n%d\t%s%16d\t", enable,
  			 (scheduling == 1) ? "WRR" : "SP", max_rate);
  
@@ -158,7 +146,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  		mtk_w32(eth, (i / MTK_QTX_PER_PAGE), soc->reg_map->qdma.page);
  		sch_reg = mtk_r32(eth, soc->reg_map->qdma.qtx_sch +
  				       (id % MTK_QTX_PER_PAGE) * MTK_QTX_OFFSET);
-@@ -877,7 +877,7 @@
+@@ -877,7 +877,7 @@ int mtketh_debugfs_init(struct mtk_eth *
  				    &qdma_sched_fops);
  	}
  
@@ -167,8 +155,8 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  		ret = snprintf(name, sizeof(name), "qdma_txq%d", i);
  		if (ret != strlen(name)) {
  			ret = -ENOMEM;
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2025-06-15 22:32:46.130001496 +0800
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c	2025-06-18 00:22:51.492001032 +0800
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -39,11 +39,14 @@
  #if defined(CONFIG_NET_MEDIATEK_HNAT) || defined(CONFIG_NET_MEDIATEK_HNAT_MODULE)
  #include "mtk_hnat/nf_hnat_mtk.h"
@@ -186,7 +174,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  #define MTK_ETHTOOL_STAT(x) { #x, \
  			      offsetof(struct mtk_hw_stats, x) / sizeof(u64) }
  
-@@ -938,7 +941,6 @@
+@@ -938,7 +941,6 @@ static void mtk_set_queue_speed(struct m
  {
  	const struct mtk_soc_data *soc = eth->soc;
  	u32 ofs, val;
@@ -194,7 +182,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  	if (!MTK_HAS_CAPS(soc->caps, MTK_QDMA))
  		return;
  
-@@ -1864,6 +1866,12 @@
+@@ -1864,6 +1866,12 @@ static int mtk_tx_map(struct sk_buff *sk
  	/* TX SG offload */
  	txd = itxd;
  	txd_pdma = qdma_to_pdma(ring, txd);
@@ -207,7 +195,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  
  	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
  		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
-@@ -2474,6 +2482,9 @@
+@@ -2482,6 +2490,9 @@ static int mtk_poll_rx(struct napi_struc
  			mac = RX_DMA_GET_SPORT(trxd.rxd4) - 1;
  		}
  
@@ -217,7 +205,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  		if (unlikely(mac < 0 || mac >= MTK_MAX_DEVS ||
  			     !eth->netdev[mac]))
  			goto release_desc;
-@@ -2611,9 +2622,6 @@
+@@ -2619,9 +2630,6 @@ static int mtk_poll_rx(struct napi_struc
  		skb_hnat_alg(skb) = 0;
  		skb_hnat_filled(skb) = 0;
  		skb_hnat_magic_tag(skb) = HNAT_MAGIC_TAG;
@@ -227,7 +215,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  
  		if (skb_hnat_reason(skb) == HIT_BIND_FORCE_TO_CPU) {
  			trace_printk("[%s] reason=0x%x(force to CPU) from WAN to Ext\n",
-@@ -2990,14 +2998,12 @@
+@@ -2998,14 +3006,12 @@ static int mtk_tx_alloc(struct mtk_eth *
  			ring->phys + ((ring_size - 1) * sz),
  			soc->reg_map->qdma.crx_ptr);
  		mtk_w32(eth, ring->last_free_ptr, soc->reg_map->qdma.drx_ptr);
@@ -242,16 +230,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  			if (mtk_is_netsys_v3_or_greater(eth) &&
  			    (eth->soc->caps != MT7988_CAPS)) {
  				val |= FIELD_PREP(MTK_QTX_SCH_MIN_RATE_MAN_V3, 1) |
-@@ -3944,7 +3950,7 @@
- 	int i, j, txqs = 1;
- 
- 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA))
--		txqs = MTK_QDMA_NUM_QUEUES;
-+		txqs = MTK_QDMA_NUM_QUEUES;
- 
- 	for (i = 0; i < MTK_MAX_DEVS; i++) {
- 		if (!eth->netdev[i])
-@@ -4263,9 +4269,6 @@
+@@ -4271,9 +4277,6 @@ static int mtk_open(struct net_device *d
  			}
  			mtk_gdm_config(eth, target_mac->id, gdm_config);
  		}
@@ -261,7 +240,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  
  		napi_enable(&eth->tx_napi);
  		napi_enable(&eth->rx_napi[0].napi);
-@@ -5447,7 +5450,16 @@
+@@ -5464,7 +5467,16 @@ static void mtk_pending_work(struct work
  	 * possible race during FE reset since it can run releasing RTNL lock.
  	 */
  	mtk_prepare_for_reset(eth);
@@ -279,7 +258,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  	/* stop all devices to make sure that dma is properly shut down */
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
  		if (!eth->netdev[i] || !netif_running(eth->netdev[i]))
-@@ -5485,7 +5497,14 @@
+@@ -5502,7 +5514,14 @@ static void mtk_pending_work(struct work
  
  	mtk_wed_fe_reset_complete();
  	mtk_restore_qdma_cfg(eth);
@@ -295,7 +274,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  	rtnl_unlock();
  }
  
-@@ -5878,10 +5897,7 @@
+@@ -5895,10 +5914,7 @@ static u16 mtk_select_queue(struct net_d
  	struct mtk_mac *mac = netdev_priv(dev);
  	unsigned int queue = 0;
  
@@ -307,7 +286,7 @@ diff -u -r a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/
  
  	if (queue >= dev->num_tx_queues)
  		queue = 0;
-@@ -7130,6 +7146,36 @@
+@@ -7147,6 +7163,36 @@ static struct platform_driver mtk_driver
  	},
  };
  

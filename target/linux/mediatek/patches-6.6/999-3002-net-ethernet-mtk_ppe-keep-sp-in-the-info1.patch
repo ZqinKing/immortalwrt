@@ -14,11 +14,9 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  .../net/ethernet/mediatek/mtk_ppe_offload.c   |  2 ++
  4 files changed, 45 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 7157e0a..f809b8f 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1861,6 +1861,22 @@ static inline u32 mtk_get_ib1_pkt_type(struct mtk_eth *eth, u32 val)
+@@ -1888,6 +1888,22 @@ static inline u32 mtk_get_ib1_pkt_type(s
  	return FIELD_GET(MTK_FOE_IB1_PACKET_TYPE, val);
  }
  
@@ -41,11 +39,9 @@ index 7157e0a..f809b8f 100644
  static inline u32 mtk_get_ib2_multicast_mask(struct mtk_eth *eth)
  {
  	if (mtk_is_netsys_v2_or_greater(eth))
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.c b/drivers/net/ethernet/mediatek/mtk_ppe.c
-index 66fbde5..26ff0e3 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -515,6 +515,31 @@ mtk_flow_entry_match(struct mtk_eth *eth, struct mtk_flow_entry *entry,
+@@ -514,6 +514,31 @@ mtk_flow_entry_match(struct mtk_eth *eth
  	return !memcmp(&entry->data.data, &data->data, len - 4);
  }
  
@@ -77,8 +73,6 @@ index 66fbde5..26ff0e3 100644
  static void
  __mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
  		      bool set_state)
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.h b/drivers/net/ethernet/mediatek/mtk_ppe.h
-index 6363453..b536c14 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.h
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
 @@ -34,6 +34,7 @@
@@ -89,19 +83,17 @@ index 6363453..b536c14 100644
  #define MTK_FOE_IB1_BIND_VLAN_LAYER_V2	GENMASK(16, 14)
  #define MTK_FOE_IB1_BIND_PPPOE_V2	BIT(17)
  #define MTK_FOE_IB1_BIND_VLAN_TAG_V2	BIT(18)
-@@ -399,6 +400,7 @@ int mtk_foe_entry_set_wdma(struct mtk_eth *eth, struct mtk_foe_entry *entry,
- 			   int tid, bool amsdu_en);
+@@ -399,6 +400,7 @@ int mtk_foe_entry_set_wdma(struct mtk_et
+ 			   bool amsdu_en);
  int mtk_foe_entry_set_queue(struct mtk_eth *eth, struct mtk_foe_entry *entry,
  			    unsigned int queue);
 +int mtk_foe_entry_set_sp(struct mtk_ppe *ppe, struct mtk_foe_entry *entry);
  int mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index);
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-index b3cf74b..372ed66 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -459,6 +459,8 @@ mtk_flow_offload_replace(struct mtk_eth *eth, struct flow_cls_offload *f,
+@@ -457,6 +457,8 @@ mtk_flow_offload_replace(struct mtk_eth
  	if (data.pppoe.num == 1)
  		mtk_foe_entry_set_pppoe(eth, &foe, data.pppoe.sid);
  
@@ -110,6 +102,3 @@ index b3cf74b..372ed66 100644
  	err = mtk_flow_set_output_device(eth, &foe, odev, data.eth.h_dest,
  					 &wed_index);
  	if (err)
--- 
-2.45.2
-

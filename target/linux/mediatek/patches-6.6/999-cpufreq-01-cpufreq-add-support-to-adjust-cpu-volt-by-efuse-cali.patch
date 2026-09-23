@@ -8,8 +8,6 @@ Subject: [PATCH 1/2] cpufreq: add support to adjust cpu volt by efuse
  drivers/cpufreq/mediatek-cpufreq.c | 81 ++++++++++++++++++++++++++++--
  1 file changed, 76 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/cpufreq/mediatek-cpufreq.c b/drivers/cpufreq/mediatek-cpufreq.c
-index 508c70c2..ac483124 100644
 --- a/drivers/cpufreq/mediatek-cpufreq.c
 +++ b/drivers/cpufreq/mediatek-cpufreq.c
 @@ -15,8 +15,18 @@
@@ -31,7 +29,7 @@ index 508c70c2..ac483124 100644
  	int min_volt_shift;
  	int max_volt_shift;
  	int proc_max_volt;
-@@ -197,6 +207,50 @@ static bool is_ccifreq_ready(struct mtk_cpu_dvfs_info *info)
+@@ -197,6 +207,50 @@ static bool is_ccifreq_ready(struct mtk_
  	return true;
  }
  
@@ -82,7 +80,7 @@ index 508c70c2..ac483124 100644
  static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
  				  unsigned int index)
  {
-@@ -583,6 +637,15 @@ static int mtk_cpufreq_init(struct cpufreq_policy *policy)
+@@ -583,6 +637,15 @@ static int mtk_cpufreq_init(struct cpufr
  		return -EINVAL;
  	}
  
@@ -98,7 +96,7 @@ index 508c70c2..ac483124 100644
  	ret = dev_pm_opp_init_cpufreq_table(info->cpu_dev, &freq_table);
  	if (ret) {
  		dev_err(info->cpu_dev,
-@@ -682,6 +745,16 @@ static struct platform_driver mtk_cpufreq_platdrv = {
+@@ -682,6 +745,16 @@ static struct platform_driver mtk_cpufre
  	.probe		= mtk_cpufreq_probe,
  };
  
@@ -115,7 +113,7 @@ index 508c70c2..ac483124 100644
  static const struct mtk_cpufreq_platform_data mt2701_platform_data = {
  	.min_volt_shift = 100000,
  	.max_volt_shift = 200000,
-@@ -708,11 +781,9 @@ static const struct mtk_cpufreq_platform_data mt7623_platform_data = {
+@@ -708,11 +781,9 @@ static const struct mtk_cpufreq_platform
  };
  
  static const struct mtk_cpufreq_platform_data mt7988_platform_data = {
@@ -130,6 +128,3 @@ index 508c70c2..ac483124 100644
  	.ccifreq_supported = true,
  };
  
--- 
-2.45.2
-

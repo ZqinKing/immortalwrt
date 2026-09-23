@@ -11,8 +11,6 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  net/netfilter/nft_flow_offload.c | 164 ++++++++++++++++++++++++++++---
  1 file changed, 148 insertions(+), 16 deletions(-)
 
-diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
-index 53fd3f7..79cdfdc 100644
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
 @@ -14,6 +14,7 @@
@@ -23,7 +21,7 @@ index 53fd3f7..79cdfdc 100644
  
  struct nft_flow_offload {
  	struct nft_flowtable	*flowtable;
-@@ -45,6 +46,28 @@ static bool nft_is_valid_ether_device(const struct net_device *dev)
+@@ -45,6 +46,28 @@ static bool nft_is_valid_ether_device(co
  	return true;
  }
  
@@ -52,7 +50,7 @@ index 53fd3f7..79cdfdc 100644
  static int nft_dev_fill_forward_path(const struct nf_flow_route *route,
  				     const struct dst_entry *dst_cache,
  				     const struct nf_conn *ct,
-@@ -59,6 +82,9 @@ static int nft_dev_fill_forward_path(const struct nf_flow_route *route,
+@@ -59,6 +82,9 @@ static int nft_dev_fill_forward_path(con
  	if (!nft_is_valid_ether_device(dev))
  		goto out;
  
@@ -62,7 +60,7 @@ index 53fd3f7..79cdfdc 100644
  	n = dst_neigh_lookup(dst_cache, daddr);
  	if (!n)
  		return -1;
-@@ -102,12 +128,12 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+@@ -102,12 +128,12 @@ static void nft_dev_path_info(const stru
  
  	for (i = 0; i < stack->num_paths; i++) {
  		path = &stack->path[i];
@@ -76,7 +74,7 @@ index 53fd3f7..79cdfdc 100644
  			if (is_zero_ether_addr(info->h_source))
  				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
  
-@@ -153,7 +179,6 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+@@ -160,7 +186,6 @@ static void nft_dev_path_info(const stru
  			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
  			break;
  		default:
@@ -84,7 +82,7 @@ index 53fd3f7..79cdfdc 100644
  			break;
  		}
  	}
-@@ -184,22 +209,39 @@ static bool nft_flowtable_find_dev(const struct net_device *dev,
+@@ -191,22 +216,39 @@ static bool nft_flowtable_find_dev(const
  	return found;
  }
  
@@ -129,7 +127,7 @@ index 53fd3f7..79cdfdc 100644
  
  	route->tuple[!dir].in.ifindex = info.indev->ifindex;
  	for (i = 0; i < info.num_encaps; i++) {
-@@ -216,13 +258,15 @@ static void nft_dev_forward_path(struct nf_flow_route *route,
+@@ -223,13 +265,15 @@ static void nft_dev_forward_path(struct
  		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
  		route->tuple[dir].xmit_type = info.xmit_type;
  	}
@@ -150,7 +148,7 @@ index 53fd3f7..79cdfdc 100644
  {
  	struct dst_entry *this_dst = skb_dst(pkt->skb);
  	struct dst_entry *other_dst = NULL;
-@@ -264,11 +308,94 @@ static int nft_flow_route(const struct nft_pktinfo *pkt,
+@@ -271,11 +315,94 @@ static int nft_flow_route(const struct n
  
  	if (route->tuple[dir].xmit_type	== FLOW_OFFLOAD_XMIT_NEIGH &&
  	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
@@ -247,7 +245,7 @@ index 53fd3f7..79cdfdc 100644
  }
  
  static bool nft_flow_offload_skip(struct sk_buff *skb, int family)
-@@ -356,8 +483,13 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+@@ -363,8 +490,13 @@ static void nft_flow_offload_eval(const
  		goto out;
  
  	dir = CTINFO2DIR(ctinfo);
@@ -263,6 +261,3 @@ index 53fd3f7..79cdfdc 100644
  
  	flow = flow_offload_alloc(ct);
  	if (!flow)
--- 
-2.45.2
-

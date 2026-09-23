@@ -2,11 +2,9 @@ From 9f08ee7f19ed8ab3f749810535a3f07d82ab41fe Mon Sep 17 00:00:00 2001
 From: gfuzan <gfuzan@163.com>
 Date: Tue, 29 Jul 2025 22:21:21 +0800
 
-diff --git a/drivers/hwmon/pwm-fan.c b/drivers/hwmon/pwm-fan.c
-index b67bc9e833c0..614b675c0de2 100644
 --- a/drivers/hwmon/pwm-fan.c
 +++ b/drivers/hwmon/pwm-fan.c
-@@ -50,6 +50,7 @@
+@@ -50,6 +50,7 @@ struct pwm_fan_ctx {
  	struct pwm_fan_tach *tachs;
  	ktime_t sample_start;
  	struct timer_list rpm_timer;
@@ -14,7 +12,7 @@ index b67bc9e833c0..614b675c0de2 100644
  
  	unsigned int pwm_value;
  	unsigned int pwm_fan_state;
-@@ -474,7 +475,6 @@
+@@ -474,7 +475,6 @@ static void pwm_fan_cleanup(void *__ctx)
  
  static int pwm_fan_probe(struct platform_device *pdev)
  {
@@ -22,7 +20,7 @@ index b67bc9e833c0..614b675c0de2 100644
  	struct device *dev = &pdev->dev;
  	struct pwm_fan_ctx *ctx;
  	struct device *hwmon;
-@@ -627,19 +627,7 @@
+@@ -627,19 +627,7 @@ static int pwm_fan_probe(struct platform
  		return ret;
  
  	ctx->pwm_fan_state = ctx->pwm_fan_max_state;

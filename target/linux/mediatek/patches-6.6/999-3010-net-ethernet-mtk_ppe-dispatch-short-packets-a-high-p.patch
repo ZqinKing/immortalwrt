@@ -14,11 +14,9 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  .../net/ethernet/mediatek/mtk_ppe_offload.c   |  4 +-
  3 files changed, 41 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.c b/drivers/net/ethernet/mediatek/mtk_ppe.c
-index 034340c..a9df40a 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -505,6 +505,38 @@ int mtk_foe_entry_set_queue(struct mtk_eth *eth, struct mtk_foe_entry *entry,
+@@ -505,6 +505,38 @@ int mtk_foe_entry_set_queue(struct mtk_e
  	return 0;
  }
  
@@ -57,7 +55,7 @@ index 034340c..a9df40a 100644
  static int
  mtk_flow_entry_match_len(struct mtk_eth *eth, struct mtk_foe_entry *entry)
  {
-@@ -848,6 +880,12 @@ void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash)
+@@ -869,6 +901,12 @@ void __mtk_ppe_check_skb(struct mtk_ppe
  			continue;
  		}
  
@@ -70,11 +68,9 @@ index 034340c..a9df40a 100644
  		entry->hash = hash;
  		__mtk_foe_entry_commit(ppe, &entry->data, hash);
  		found = true;
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-index 2d30ae0..46024ef 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-@@ -236,7 +236,7 @@ mtk_ppe_internal_debugfs_write_qos(struct file *file, const char __user *buffer,
+@@ -236,7 +236,7 @@ mtk_ppe_internal_debugfs_write_qos(struc
  		eth->qos_toggle = 1;
  	} else if (buf[0] == '2') {
  		pr_info("Per-port-per-queue mode is going to be enabled !\n");
@@ -83,13 +79,11 @@ index 2d30ae0..46024ef 100644
  		eth->qos_toggle = 2;
  	}
  
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-index f4657dd..e133362 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -237,11 +237,11 @@ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+@@ -245,11 +245,11 @@ mtk_flow_set_output_device(struct mtk_et
  
- 	if (eth->qos_toggle == 2 && mtk_ppe_check_pppq_path(eth, foe, dsa_port))
+ 	if (eth->qos_toggle == 2 && mtk_ppe_check_pppq_path(mac, foe, dsa_port))
  		mtk_foe_entry_set_queue(eth, foe, queue);
 -	else if (eth->qos_toggle == 1 || (ct->mark & MTK_QDMA_QUEUE_MASK) >= 9) {
 +	else if (eth->qos_toggle == 1 || (ct->mark & MTK_QDMA_QUEUE_MASK) >= 15) {
@@ -101,6 +95,3 @@ index f4657dd..e133362 100644
  		else
  			qos_ul_toggle = ((ct->mark >> 16) & MTK_QDMA_QUEUE_MASK) >= 1 ? 1 : 0;
  
--- 
-2.45.2
-

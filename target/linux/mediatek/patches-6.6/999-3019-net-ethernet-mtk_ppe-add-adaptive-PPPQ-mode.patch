@@ -18,11 +18,9 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  .../net/ethernet/mediatek/mtk_ppe_offload.c   |  2 +-
  5 files changed, 47 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 38c3f85..6058e8d 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1921,6 +1921,11 @@ mtk_ppe_check_pppq_path(struct mtk_mac *mac, struct mtk_foe_entry *foe, int dsa_
+@@ -1932,6 +1932,11 @@ mtk_ppe_check_pppq_path(struct mtk_mac *
  	    (dsa_port == 5 && wifi_rx))
  		return 1;
  
@@ -34,11 +32,9 @@ index 38c3f85..6058e8d 100644
  	return 0;
  }
  
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.c b/drivers/net/ethernet/mediatek/mtk_ppe.c
-index d528d09..e7f03c8 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -768,16 +768,29 @@ __mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry,
+@@ -767,16 +767,29 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
  
  	if (entry->hash != 0xffff && set_state) {
  		struct mtk_foe_entry *hwe = mtk_foe_get_entry(ppe, entry->hash);
@@ -69,7 +65,7 @@ index d528d09..e7f03c8 100644
  
  	if (entry->type != MTK_FLOW_TYPE_L2_SUBFLOW)
  		return;
-@@ -898,7 +911,10 @@ __mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_foe_entry *entry,
+@@ -897,7 +910,10 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
  	struct mtk_eth *eth = ppe->eth;
  	u16 timestamp = mtk_eth_timestamp(eth);
  	struct mtk_foe_entry *hwe;
@@ -81,7 +77,7 @@ index d528d09..e7f03c8 100644
  
  	if (mtk_is_netsys_v2_or_greater(eth)) {
  		entry->ib1 &= ~MTK_FOE_IB1_BIND_TIMESTAMP_V2;
-@@ -910,7 +926,21 @@ __mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_foe_entry *entry,
+@@ -909,7 +925,21 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
  					 timestamp);
  	}
  
@@ -104,11 +100,9 @@ index d528d09..e7f03c8 100644
  	memcpy(&hwe->data, &entry->data, eth->soc->foe_entry_size - sizeof(hwe->ib1));
  	wmb();
  	hwe->ib1 = entry->ib1;
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe.h b/drivers/net/ethernet/mediatek/mtk_ppe.h
-index 6640196..45f170c 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.h
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
-@@ -379,6 +379,7 @@ mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash)
+@@ -379,6 +379,7 @@ mtk_ppe_check_skb(struct mtk_ppe *ppe, s
  	__mtk_ppe_check_skb(ppe, skb, hash);
  }
  
@@ -116,11 +110,9 @@ index 6640196..45f170c 100644
  int mtk_foe_entry_prepare(struct mtk_eth *eth, struct mtk_foe_entry *entry,
  			  int type, int l4proto, u8 pse_port, u8 *src_mac,
  			  u8 *dest_mac);
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-index 3c05af2..c35878c 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-@@ -206,6 +206,8 @@ mtk_ppe_internal_debugfs_read_qos(struct seq_file *m, void *private)
+@@ -206,6 +206,8 @@ mtk_ppe_internal_debugfs_read_qos(struct
  		pr_info("HQoS is enabled now!\n");
  	else if (eth->qos_toggle == 2)
  		pr_info("Per-port-per-queue mode is enabled!\n");
@@ -129,7 +121,7 @@ index 3c05af2..c35878c 100644
  
  	return 0;
  }
-@@ -238,6 +240,11 @@ mtk_ppe_internal_debugfs_write_qos(struct file *file, const char __user *buffer,
+@@ -238,6 +240,11 @@ mtk_ppe_internal_debugfs_write_qos(struc
  		pr_info("Per-port-per-queue mode is going to be enabled !\n");
  		pr_info("PPPQ use qid 3~14 (scheduler 0).\n");
  		eth->qos_toggle = 2;
@@ -141,11 +133,9 @@ index 3c05af2..c35878c 100644
  	}
  
  	return len;
-diff --git a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-index f9152db..2907d0f 100644
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -243,7 +243,7 @@ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+@@ -243,7 +243,7 @@ mtk_flow_set_output_device(struct mtk_et
  		queue = (pse_port == PSE_GDM3_PORT) ? 2 : pse_port - 1;
  	}
  
@@ -154,6 +144,3 @@ index f9152db..2907d0f 100644
  		mtk_foe_entry_set_queue(eth, foe, queue);
  	else if (eth->qos_toggle == 1 || (ct->mark & MTK_QDMA_QUEUE_MASK) >= 15) {
  		u8 qos_ul_toggle;
--- 
-2.45.2
-

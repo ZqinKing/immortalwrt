@@ -8,11 +8,9 @@ Subject: [PATCH 2/2] cpufreq: mt7988: enable using efuse calibration data for
  arch/arm64/boot/dts/mediatek/mt7988a.dtsi | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/mediatek/mt7988a.dtsi b/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
-index d13585c8..951b04a8 100644
 --- a/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
-@@ -50,6 +50,8 @@ cpu0: cpu@0 {
+@@ -50,6 +50,8 @@
  				 <&topckgen CLK_TOP_XTAL>;
  			clock-names = "cpu", "intermediate";
  			operating-points-v2 = <&cluster0_opp>;
@@ -21,7 +19,7 @@ index d13585c8..951b04a8 100644
  			mediatek,cci = <&cci>;
  		};
  
-@@ -62,6 +64,8 @@ cpu1: cpu@1 {
+@@ -62,6 +64,8 @@
  				 <&topckgen CLK_TOP_XTAL>;
  			clock-names = "cpu", "intermediate";
  			operating-points-v2 = <&cluster0_opp>;
@@ -30,7 +28,7 @@ index d13585c8..951b04a8 100644
  			mediatek,cci = <&cci>;
  		};
  
-@@ -74,6 +78,8 @@ cpu2: cpu@2 {
+@@ -74,6 +78,8 @@
  				 <&topckgen CLK_TOP_XTAL>;
  			clock-names = "cpu", "intermediate";
  			operating-points-v2 = <&cluster0_opp>;
@@ -39,7 +37,7 @@ index d13585c8..951b04a8 100644
  			mediatek,cci = <&cci>;
  		};
  
-@@ -86,6 +92,8 @@ cpu3: cpu@3 {
+@@ -86,6 +92,8 @@
  				 <&topckgen CLK_TOP_XTAL>;
  			clock-names = "cpu", "intermediate";
  			operating-points-v2 = <&cluster0_opp>;
@@ -48,6 +46,3 @@ index d13585c8..951b04a8 100644
  			mediatek,cci = <&cci>;
  		};
  
--- 
-2.45.2
-

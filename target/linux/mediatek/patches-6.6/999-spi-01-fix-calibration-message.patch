@@ -1,6 +1,6 @@
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1285,7 +1285,7 @@ static int spinand_init(struct spinand_d
+@@ -1295,7 +1295,7 @@ static int spinand_init(struct spinand_d
  
  	ret = spi_mem_do_calibration(spinand->spimem, spinand_cal_read, spinand);
  	if (ret)

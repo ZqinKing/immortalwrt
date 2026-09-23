@@ -72,7 +72,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		phydev->enable_tx_lpi = false;
  		phy_link_down(phydev);
  	}
-@@ -1702,15 +1702,21 @@ EXPORT_SYMBOL(phy_ethtool_get_eee);
+@@ -1715,15 +1715,21 @@ EXPORT_SYMBOL(phy_ethtool_get_eee);
  static void phy_ethtool_set_eee_noneg(struct phy_device *phydev,
  				      const struct eee_config *old_cfg)
  {

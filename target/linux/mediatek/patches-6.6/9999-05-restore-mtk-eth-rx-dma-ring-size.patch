@@ -25,7 +25,7 @@ to ensure adequate RX buffering headroom.
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -6897,7 +6897,7 @@
+@@ -6897,7 +6897,7 @@ static const struct mtk_soc_data mt2701_
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
  		.dma_l4_valid = RX_DMA_L4_VALID,
@@ -34,7 +34,7 @@ to ensure adequate RX buffering headroom.
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -6925,7 +6925,7 @@
+@@ -6925,7 +6925,7 @@ static const struct mtk_soc_data mt7621_
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
  		.dma_l4_valid = RX_DMA_L4_VALID,
@@ -43,7 +43,7 @@ to ensure adequate RX buffering headroom.
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -6955,7 +6955,7 @@
+@@ -6955,7 +6955,7 @@ static const struct mtk_soc_data mt7622_
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
  		.dma_l4_valid = RX_DMA_L4_VALID,
@@ -52,7 +52,7 @@ to ensure adequate RX buffering headroom.
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -6984,7 +6984,7 @@
+@@ -6984,7 +6984,7 @@ static const struct mtk_soc_data mt7623_
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
  		.dma_l4_valid = RX_DMA_L4_VALID,
@@ -61,7 +61,7 @@ to ensure adequate RX buffering headroom.
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -7010,7 +7010,7 @@
+@@ -7010,7 +7010,7 @@ static const struct mtk_soc_data mt7629_
  	.rx = {
  		.desc_size = sizeof(struct mtk_rx_dma),
  		.dma_l4_valid = RX_DMA_L4_VALID,
@@ -70,7 +70,7 @@ to ensure adequate RX buffering headroom.
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -7040,7 +7040,7 @@
+@@ -7042,7 +7042,7 @@ static const struct mtk_soc_data mt7981_
  		.dma_l4_valid = RX_DMA_L4_VALID,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -79,7 +79,7 @@ to ensure adequate RX buffering headroom.
  	},
  };
  
-@@ -7070,7 +7070,7 @@
+@@ -7072,7 +7072,7 @@ static const struct mtk_soc_data mt7986_
  		.dma_l4_valid = RX_DMA_L4_VALID,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -88,7 +88,7 @@ to ensure adequate RX buffering headroom.
  	},
  };
  
-@@ -7130,7 +7130,7 @@
+@@ -7132,7 +7132,7 @@ static const struct mtk_soc_data mt7988_
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
@@ -97,7 +97,7 @@ to ensure adequate RX buffering headroom.
  	},
  };
  
-@@ -7153,7 +7153,7 @@
+@@ -7155,7 +7155,7 @@ static const struct mtk_soc_data rt5350_
  		.dma_l4_valid = RX_DMA_L4_VALID_PDMA,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,

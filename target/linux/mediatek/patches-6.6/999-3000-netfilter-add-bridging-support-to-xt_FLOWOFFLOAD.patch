@@ -12,11 +12,9 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  net/netfilter/xt_FLOWOFFLOAD.c | 160 +++++++++++++++++++++++++++++----
  2 files changed, 145 insertions(+), 16 deletions(-)
 
-diff --git a/net/bridge/br_fdb.c b/net/bridge/br_fdb.c
-index a6d8cd9..0da839d 100644
 --- a/net/bridge/br_fdb.c
 +++ b/net/bridge/br_fdb.c
-@@ -272,6 +272,7 @@ struct net_bridge_fdb_entry *br_fdb_find_rcu(struct net_bridge *br,
+@@ -272,6 +272,7 @@ struct net_bridge_fdb_entry *br_fdb_find
  {
  	return fdb_find_rcu(&br->fdb_hash_tbl, addr, vid);
  }
@@ -24,8 +22,6 @@ index a6d8cd9..0da839d 100644
  
  /* When a static FDB entry is added, the mac address from the entry is
   * added to the bridge private HW address list and all required ports
-diff --git a/net/netfilter/xt_FLOWOFFLOAD.c b/net/netfilter/xt_FLOWOFFLOAD.c
-index 08e0b94..704babb 100644
 --- a/net/netfilter/xt_FLOWOFFLOAD.c
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
 @@ -15,6 +15,7 @@
@@ -36,7 +32,7 @@ index 08e0b94..704babb 100644
  
  struct xt_flowoffload_hook {
  	struct hlist_node list;
-@@ -253,6 +254,28 @@ xt_flowoffload_skip(struct sk_buff *skb, int family)
+@@ -253,6 +254,28 @@ xt_flowoffload_skip(struct sk_buff *skb,
  	return false;
  }
  
@@ -65,7 +61,7 @@ index 08e0b94..704babb 100644
  static enum flow_offload_xmit_type nf_xmit_type(struct dst_entry *dst)
  {
  	if (dst_xfrm(dst))
-@@ -292,12 +315,12 @@ static void nf_dev_path_info(const struct net_device_path_stack *stack,
+@@ -292,12 +315,12 @@ static void nf_dev_path_info(const struc
  
  	for (i = 0; i < stack->num_paths; i++) {
  		path = &stack->path[i];
@@ -79,7 +75,7 @@ index 08e0b94..704babb 100644
  			if (is_zero_ether_addr(info->h_source))
  				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
  
-@@ -342,7 +365,6 @@ static void nf_dev_path_info(const struct net_device_path_stack *stack,
+@@ -342,7 +365,6 @@ static void nf_dev_path_info(const struc
  			}
  			break;
  		default:
@@ -87,7 +83,7 @@ index 08e0b94..704babb 100644
  			break;
  		}
  	}
-@@ -369,6 +391,9 @@ static int nf_dev_fill_forward_path(const struct nf_flow_route *route,
+@@ -369,6 +391,9 @@ static int nf_dev_fill_forward_path(cons
  	if (!nf_is_valid_ether_device(dev))
  		goto out;
  
@@ -97,7 +93,7 @@ index 08e0b94..704babb 100644
  	n = dst_neigh_lookup(dst_cache, daddr);
  	if (!n)
  		return -1;
-@@ -386,23 +411,40 @@ static int nf_dev_fill_forward_path(const struct nf_flow_route *route,
+@@ -386,23 +411,40 @@ out:
  	return dev_fill_forward_path(dev, ha, stack);
  }
  
@@ -143,7 +139,7 @@ index 08e0b94..704babb 100644
  
  	route->tuple[!dir].in.ifindex = info.indev->ifindex;
  	for (i = 0; i < info.num_encaps; i++) {
-@@ -419,13 +461,15 @@ static void nf_dev_forward_path(struct nf_flow_route *route,
+@@ -419,13 +461,15 @@ static void nf_dev_forward_path(struct n
  		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
  		route->tuple[dir].xmit_type = info.xmit_type;
  	}
@@ -163,22 +159,24 @@ index 08e0b94..704babb 100644
  {
  	struct dst_entry *this_dst = skb_dst(skb);
  	struct dst_entry *other_dst = NULL;
-@@ -456,13 +500,91 @@ xt_flowoffload_route(struct sk_buff *skb, const struct nf_conn *ct,
+@@ -456,15 +500,93 @@ xt_flowoffload_route(struct sk_buff *skb
  	nf_default_forward_path(route, this_dst, dir, devs);
  	nf_default_forward_path(route, other_dst, !dir, devs);
  
 -	if (route->tuple[dir].xmit_type	== FLOW_OFFLOAD_XMIT_NEIGH &&
 +	if (route->tuple[dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH &&
-+	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
+ 	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
+-		nf_dev_forward_path(route, ct, dir, devs);
+-		nf_dev_forward_path(route, ct, !dir, devs);
 +		if (nf_dev_forward_path(skb, route, ct, dir, devs))
 +			return -ENOENT;
 +		if (nf_dev_forward_path(skb, route, ct, !dir, devs))
 +			return -ENOENT;
-+	}
-+
-+	return 0;
-+}
-+
+ 	}
+ 
+ 	return 0;
+ }
+ 
 +static int
 +xt_flowoffload_route_dir(struct sk_buff *skb, struct nf_flow_route *route,
 +			 const struct nf_conn *ct, enum ip_conntrack_dir dir,
@@ -238,27 +236,27 @@ index 08e0b94..704babb 100644
 +		goto err_route_dir1;
 +
 +	if (route->tuple[dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH &&
- 	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
--		nf_dev_forward_path(route, ct, dir, devs);
--		nf_dev_forward_path(route, ct, !dir, devs);
++	    route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH) {
 +		if (nf_dev_forward_path(skb, route, ct, dir, devs) ||
 +		    nf_dev_forward_path(skb, route, ct, !dir, devs)) {
 +			ret = -ENOENT;
 +			goto err_route_dir2;
 +		}
- 	}
- 
- 	return 0;
++	}
++
++	return 0;
 +
 +err_route_dir2:
 +	dst_release(route->tuple[!dir].dst);
 +err_route_dir1:
 +	dst_release(route->tuple[dir].dst);
 +	return ret;
- }
- 
++}
++
  static unsigned int
-@@ -520,8 +642,14 @@ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ {
+@@ -520,8 +642,14 @@ flowoffload_tg(struct sk_buff *skb, cons
  	if (test_and_set_bit(IPS_OFFLOAD_BIT, &ct->status))
  		return XT_CONTINUE;
  
@@ -275,6 +273,3 @@ index 08e0b94..704babb 100644
  
  	flow = flow_offload_alloc(ct);
  	if (!flow)
--- 
-2.45.2
-
