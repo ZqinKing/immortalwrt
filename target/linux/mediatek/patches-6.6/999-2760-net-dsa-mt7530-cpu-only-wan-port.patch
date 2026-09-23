@@ -1,0 +1,68 @@
+Subject: [PATCH] net: dsa: mt7530: support a CPU-only WAN port
+
+Allow a switch device tree node to mark one user port as a WAN port.
+Keep that port connected to the CPU port, but do not add it to any
+other user-port port matrix. The port must also remain outside the
+DSA hardware bridge so Linux can software-forward WAN traffic through
+the CPU for filtering.
+
+---
+ drivers/net/dsa/mt7530.c | 15 +++++++++++++--
+ drivers/net/dsa/mt7530.h |  2 ++
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1309,7 +1309,8 @@ static void mt7530_update_port_member(st
+ 
+ 		isolated = p->isolated && other_p->isolated;
+ 
+-		if (join && !isolated) {
++		if (join && !isolated && port != priv->wan_port &&
++		    other_port != priv->wan_port) {
+ 			other_p->pm |= PCR_MATRIX(BIT(port));
+ 			port_bitmap |= BIT(other_port);
+ 		} else {
+@@ -1386,6 +1387,9 @@ mt7530_port_bridge_join(struct dsa_switc
+ {
+ 	struct mt7530_priv *priv = ds->priv;
+ 
++	if (port == priv->wan_port)
++		return -EOPNOTSUPP;
++
+ 	mutex_lock(&priv->reg_mutex);
+ 
+ 	mt7530_update_port_member(priv, port, bridge.dev, true);
+@@ -3202,6 +3206,14 @@ int
+ mt7530_probe_common(struct mt7530_priv *priv)
+ {
+ 	struct device *dev = priv->dev;
++	u32 wan_port;
++
++	priv->wan_port = -1;
++	if (!of_property_read_u32(dev->of_node, "mediatek,wan-port", &wan_port)) {
++		if (wan_port >= MT7530_NUM_PORTS)
++			return -EINVAL;
++		priv->wan_port = wan_port;
++	}
+ 
+ 	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
+ 	if (!priv->ds)
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -791,6 +791,7 @@ struct mt753x_info {
+  * @reg_mutex:		The lock for protecting among process accessing
+  *			registers
+  * @p5_mode:		Holding the current mode of port 5 of the MT7530 switch
++ * @wan_port:	User port restricted to CPU forwarding, or -1
+  * @p5_sgmii:		Flag for distinguishing if port 5 of the MT7531 switch
+  *			has got SGMII
+  * @irq:		IRQ number of the switch
+@@ -813,6 +814,7 @@ struct mt7530_priv {
+ 	unsigned int		id;
+ 	bool			mcm;
+ 	enum mt7530_p5_mode	p5_mode;
++	int			wan_port;
+ 	bool			p5_sgmii;
+ 	u8			mirror_rx;
+ 	u8			mirror_tx;
