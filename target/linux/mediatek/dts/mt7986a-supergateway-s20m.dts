@@ -42,6 +42,7 @@
 			#interrupt-cells = <1>;
 			interrupt-parent = <&pio>;
 			interrupts = <66 IRQ_TYPE_LEVEL_HIGH>;
+			mediatek,wan-port = <0>;
 
 			ports {
 				#address-cells = <1>;
