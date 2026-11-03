@@ -183,6 +183,22 @@ endef
 $(eval $(call KernelPackage,libeth))
 
 
+define KernelPackage/libeth-xdp
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Common Intel Ethernet XDP library
+  DEPENDS:=+kmod-libeth
+  KCONFIG:=CONFIG_LIBETH_XDP
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libeth/libeth_xdp.ko
+endef
+
+define KernelPackage/libeth-xdp/description
+ Common Intel Ethernet XDP library
+endef
+
+$(eval $(call KernelPackage,libeth-xdp))
+
+
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
@@ -378,6 +394,7 @@ define KernelPackage/phy-ax88796b
    DEPENDS:=+kmod-libphy
    FILES:=$(LINUX_DIR)/drivers/net/phy/ax88796b.ko
    AUTOLOAD:=$(call AutoProbe,ax88796b)
+   DEFAULT_VARIANT:=1
 endef
 
 define KernelPackage/phy-ax88796b/description
@@ -386,6 +403,27 @@ define KernelPackage/phy-ax88796b/description
 endef
 
 $(eval $(call KernelPackage,phy-ax88796b))
+
+
+define KernelPackage/phy-ax88796b-rust
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Asix PHY driver written in Rust
+   KCONFIG:= \
+	CONFIG_AX88796B_RUST_PHY \
+	CONFIG_PHYLIB=y \
+	CONFIG_RUST_PHYLIB_ABSTRACTIONS=y
+   DEPENDS:=@KERNEL_RUST
+   PROVIDES:=kmod-phy-ax88796b
+   FILES:=$(LINUX_DIR)/drivers/net/phy/ax88796b_rust.ko
+   AUTOLOAD:=$(call AutoProbe,ax88796b_rust)
+endef
+
+define KernelPackage/phy-ax88796b-rust/description
+   The Rust reference driver for the Asix Electronics PHYs, equivalent to
+   kmod-phy-ax88796b and installable in its place.
+endef
+
+$(eval $(call KernelPackage,phy-ax88796b-rust))
 
 
 define KernelPackage/phy-broadcom
@@ -635,6 +673,75 @@ define KernelPackage/phy-airoha-en8811h/description
 endef
 
 $(eval $(call KernelPackage,phy-airoha-en8811h))
+
+
+define KernelPackage/airoha-npu
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Airoha Network Processor Unit support
+  DEPENDS:=@TARGET_airoha +airoha-en7581-mt7996-npu-firmware
+  KCONFIG:=CONFIG_NET_AIROHA_NPU
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/airoha/airoha_npu.ko
+  AUTOLOAD:=$(call AutoLoad,40,airoha_npu,1)
+endef
+
+define KernelPackage/airoha-npu/description
+  Kernel module for Airoha Network Processor Unit (NPU).
+  Required for PPE hardware flow offloading and WiFi WED offloading.
+endef
+
+$(eval $(call KernelPackage,airoha-npu))
+
+
+define KernelPackage/airoha-eth
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Airoha SoC Gigabit Ethernet support
+  DEPENDS:=@TARGET_airoha +kmod-airoha-npu +kmod-of-mdio
+  KCONFIG:=CONFIG_NET_AIROHA
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/airoha/airoha-eth.ko
+  AUTOLOAD:=$(call AutoLoad,41,airoha-eth,1)
+endef
+
+define KernelPackage/airoha-eth/description
+  Kernel module for Airoha SoC Gigabit Ethernet.
+  Includes PPE (Packet Processing Engine) for hardware offloading.
+endef
+
+$(eval $(call KernelPackage,airoha-eth))
+
+
+define KernelPackage/dsa-mt7530
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MediaTek MT7530/MT7531 DSA switch
+  DEPENDS:=@TARGET_airoha
+  KCONFIG:=CONFIG_NET_DSA_MT7530
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/mt7530-dsa.ko
+  AUTOLOAD:=$(call AutoLoad,42,mt7530-dsa,1)
+endef
+
+define KernelPackage/dsa-mt7530/description
+  Kernel module for MediaTek MT7530/MT7531 Gigabit switch.
+  This is the core switch driver.
+endef
+
+$(eval $(call KernelPackage,dsa-mt7530))
+
+
+define KernelPackage/dsa-mt7530-mmio
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MediaTek MT7530 MMIO interface driver
+  DEPENDS:=@TARGET_airoha +kmod-dsa-mt7530 +kmod-airoha-eth
+  KCONFIG:=CONFIG_NET_DSA_MT7530_MMIO
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/mt7530-mmio.ko
+  AUTOLOAD:=$(call AutoLoad,43,mt7530-mmio,1)
+  DEFAULT:=y if TARGET_airoha_an7581
+endef
+
+define KernelPackage/dsa-mt7530-mmio/description
+  Kernel module for MediaTek MT7530 DSA switch with MMIO interface.
+  Used on Airoha EN7581 SoC with built-in switch.
+endef
+
+$(eval $(call KernelPackage,dsa-mt7530-mmio))
 
 
 define KernelPackage/phy-aquantia
@@ -1517,7 +1624,7 @@ $(eval $(call KernelPackage,i40e))
 define KernelPackage/ice
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller E810 Series support
-  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-hwmon-core +kmod-libie +kmod-libie-adminq +kmod-libie-fwlog
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-hwmon-core +kmod-libie +kmod-libie-adminq +kmod-libie-fwlog +kmod-libeth-xdp
   KCONFIG:=CONFIG_ICE \
     CONFIG_ICE_HWMON=y \
     CONFIG_ICE_HWTS=y \
@@ -1598,7 +1705,7 @@ define KernelPackage/pcnet32
   DEPENDS:=@(PCI_SUPPORT||TARGET_malta) +kmod-mii
   KCONFIG:=CONFIG_PCNET32
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/amd/pcnet32.ko
-  AUTOLOAD:=$(call AutoProbe,pcnet32)
+  AUTOLOAD:=$(call AutoProbe,pcnet32,1)
 endef
 
 define KernelPackage/pcnet32/description
