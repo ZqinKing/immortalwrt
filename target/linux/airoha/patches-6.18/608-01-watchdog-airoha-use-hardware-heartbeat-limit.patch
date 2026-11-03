@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenWrt Airoha maintainers <openwrt@example.invalid>
+Date: Tue, 3 Nov 2026 00:00:00 +0000
+Subject: [PATCH] watchdog: airoha: expose hardware heartbeat limit
+
+The EN7581 watchdog counter is 32 bits wide and runs at half the bus
+clock.  On a 300 MHz bus this gives a maximum hardware timeout of about
+28 seconds, while procd requests its standard 30 second userspace timeout.
+
+Use the watchdog core hardware-heartbeat support so a longer userspace
+timeout is serviced by the core keepalive worker.  Clamp the value loaded
+into the hardware counter to avoid overflowing the 32-bit register when
+the requested userspace timeout is longer than the hardware limit.
+
+Signed-off-by: OpenWrt Airoha maintainers <openwrt@example.invalid>
+---
+ drivers/watchdog/airoha_wdt.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/watchdog/airoha_wdt.c
++++ b/drivers/watchdog/airoha_wdt.c
+@@ -59,7 +59,8 @@ static int airoha_wdt_start(struct watc
+ 	val = readl(airoha_wdt->base + TIMER_CTRL);
+ 	val |= (WDT_TIMER_ENABLE | WDT_ENABLE | WDT_TIMER_INTERRUPT);
+ 	writel(val, airoha_wdt->base + TIMER_CTRL);
+-	val = wdog_dev->timeout * airoha_wdt->wdt_freq;
++	val = min(wdog_dev->timeout, wdog_dev->max_timeout) *
++		airoha_wdt->wdt_freq;
+ 	writel(val, airoha_wdt->base + WDT_TIMER_LOAD_VALUE);
+ 
+ 	return 0;
+@@ -158,6 +159,7 @@ static int airoha_wdt_probe(struct platf
+ 	wdog_dev->ops = &airoha_wdt_ops;
+ 	/* Bus 300MHz, watchdog 150MHz, 28 seconds */
+ 	wdog_dev->max_timeout = FIELD_MAX(WDT_TIMER_VAL) / airoha_wdt->wdt_freq;
++	wdog_dev->max_hw_heartbeat_ms = wdog_dev->max_timeout * 1000;
+ 	wdog_dev->parent = dev;
+ 
+ 	watchdog_set_drvdata(wdog_dev, airoha_wdt);
+-- 
+2.39.5
